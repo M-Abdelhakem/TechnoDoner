@@ -10,7 +10,8 @@
   #trashBtn { background: #ff1744; color: #fff; }
   #sillMsg { color: #ffd600; font-size: 15px; }
   #sillMsg:empty { display: none; }
-  #sigBtns { top: 84px; right: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  #banner { left: calc(50% + var(--bookOpen, 0px) / 2); width: min(820px, calc(94vw - var(--bookOpen, 0px))); }
+  #sigBtns { top: 170px; right: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
   #sigBtns button { font-size: 16px; font-weight: 900; padding: 8px 14px; border-radius: 12px; border: 0; cursor: pointer; background: #00e5ff; color: #000; }
   #sigBtns #bookBtn { background: #ffd600; }
   #help { bottom: 86px; right: 10px; left: auto; }
@@ -45,17 +46,17 @@
   <button id="okBtn">🙌 Got it <span class="key">O</span></button>
   <button id="confBtn">🤷 Again? <span class="key">?</span></button>
 </div>
-<div id="plate" class="hud"><span id="plateList">Plate: empty</span><span id="sillMsg"></span><button id="trashBtn">🗑️ <span class="key">⌫</span></button><button id="serveBtn">🛎️ To the window <span class="key">ENTER</span></button></div>
+<div id="plate" class="hud"><span id="plateList">Plate: empty</span><span id="sillMsg"></span><button id="trashBtn">🗑️ <span class="key">⌫</span></button><button id="serveBtn">🛎️ Pass it <span class="key">ENTER</span></button></div>
 <div id="toast" class="hud"></div>
 <div id="help" class="hud">
-  <span class="key">1</span>–<span class="key">5</span> or click a bin to add · <span class="key">ENTER</span> onto the window sill · <span class="key">⌫</span> trash<br>
+  <span class="key">1</span>–<span class="key">5</span> or click a bin to add · <span class="key">ENTER</span> pass it to Bärbel · <span class="key">⌫</span> trash<br>
   Tell the cashier: <span class="key">O</span> got it · <span class="key">?</span> again · <span class="key">B</span> book · <span class="key">M</span> mute
 </div>
 <div id="flash"></div>
 <div id="lobby" class="overlay">
-  <h1>🔪 CHEF BEAR</h1>
+  <h1>🔪 BRUNO · CHEF</h1>
   <h2 id="lobbyMsg">TechnoDöner · Original. You have the book and the ingredients. You can't hear a thing.</h2>
-  <p>You never see the customers. The cashier bear stands in your window and copies each regular's dance. Find the dance in your 📖 book of regulars (STAMMKUNDEN), cook their usual from the bins, and press ENTER to put it on the window sill: the cashier hands it over. Watch out for the strobe!</p>
+  <p>You never see the customers. Bärbel, the cashier, stands in your window and copies each regular's dance. Find the dance in your 📖 book of regulars (STAMMKUNDEN), cook their usual from the bins, and press ENTER to pass it: it goes straight into her paws and she serves it. Watch out for the strobe!</p>
   <div id="lobbyLevel">Difficulty: 🙂 Normal <small style="color:#aaa">(the cashier picks)</small></div>
   <button class="big" id="startBtn">START ROUND 🔊</button>
   <div id="qr" title="Scan to open this page on a phone"></div>
@@ -69,7 +70,7 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { connect, send, audio, whyHtml, showFlash, makeBear, resetPose, makeClub, makeRenderer, mat, glow, textSprite, INGREDIENTS, ingredientMesh, ingLabel,
+import { connect, send, audio, makeBanner, showRoleCard, showStamp, makeHeldDoner, makeBear, resetPose, makeClub, makeRenderer, mat, glow, textSprite, INGREDIENTS, ingredientMesh, ingLabel,
   loadRules, rulesNow, levelInfo, updateTopbar, setupMute, stackDoner, makePlateMesh, POSES, applyPose, danceFor, poseIcon } from './common.js';
 
 const $ = (id) => document.getElementById(id);
@@ -106,8 +107,10 @@ W(1.8, 3.5, -2.1, 1.75); W(1.8, 3.5, 2.1, 1.75); W(2.4, 1.0, 0, 0.5); W(2.4, 1.0
 const sill = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.5), mat('#999', { metalness: 0.8, roughness: 0.3 })); sill.position.set(0, 1.02, -2.5); frame.add(sill);
 const winNeon = new THREE.Mesh(new THREE.TorusGeometry(1, 0.025, 6, 40), glow('#ff00aa')); winNeon.scale.set(1.25, 0.8, 1); winNeon.position.set(0, 1.75, -2.4); frame.add(winNeon);
 const sign = textSprite('CASHIER', { size: 44, color: '#ffb238', scale: 0.8, depthTest: true }); sign.position.set(0, 2.72, -2.4); frame.add(sign);
-// the served döner waits on the sill until the cashier takes it
-const sillDoner = new THREE.Group(); sillDoner.position.set(-0.33, 1.07, -2.4); sillDoner.scale.setScalar(1.3); // between the bin labels sillDoner.visible = false; frame.add(sillDoner);
+// "passed": the served döner shows on the sill for a moment, then slides through the window into Bärbel's paws
+const SILL_AT = new THREE.Vector3(-0.33, 1.07, -2.4); // between the bin labels
+const sillDoner = new THREE.Group(); sillDoner.position.copy(SILL_AT); sillDoner.scale.setScalar(1.3); sillDoner.visible = false; frame.add(sillDoner);
+let passedAt = -9;
 const sillPlate = makePlateMesh(); sillPlate.scale.setScalar(0.6); sillDoner.add(sillPlate);
 const sillStack = new THREE.Group(); sillStack.position.y = 0.03; sillStack.scale.setScalar(0.6); sillDoner.add(sillStack);
 // side + back walls (tiled)
@@ -142,6 +145,7 @@ scene.add(spit);
 // ---------- the cashier bear in the window, lit by the club ----------
 const cashier = makeBear({ fur: '#a0522d', shirt: '#e63946', hat: 'cap', apron: true });
 cashier.group.scale.setScalar(0.85); cashier.group.position.set(0, 0.45, -3.7); scene.add(cashier.group);
+const cashierHeld = makeHeldDoner(cashier);
 const cashierCounter = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.9, 0.5), mat('#2a1a10')); cashierCounter.position.set(0, 0.45, -2.85); scene.add(cashierCounter);
 const clubLight = new THREE.PointLight('#ff4fa8', 6, 4, 1.2); clubLight.position.set(-0.6, 2.4, -3.0); scene.add(clubLight);
 const front = new THREE.SpotLight('#ffffff', 14, 5, 0.6, 0.6); front.position.set(0, 2.2, -2.0); front.target.position.set(0, 1.5, -3.7); scene.add(front, front.target);
@@ -192,7 +196,7 @@ $('trashBtn').onclick = () => send('trash');
 function toast(text) { const t = $('toast'); t.textContent = text; t.style.opacity = 1; clearTimeout(t.t); t.t = setTimeout(() => (t.style.opacity = 0), 1800); }
 function serve() {
   if (!state || state.phase !== 'playing') return;
-  if (state.sill || state.carry) return toast('🥙 One döner at a time: the cashier still has to hand it over');
+  if (state.carry) return toast('🥙 One at a time: Bärbel is still serving the last one');
   // an add may still be on its way (keys pressed fast): then let the server decide
   if (!state.plate.length && performance.now() - lastAddAt > 800) return toast('🍽️ The plate is empty');
   send('serve');
@@ -216,18 +220,44 @@ function addIng(id) {
 }
 
 // ---------- plate rendering ----------
-let plateKey = '', sillKey = '';
-function renderPlate(items, sillItems, carried) {
+let plateKey = '';
+function renderPlate(items, carried) {
   const key = items.join(',');
   if (key !== plateKey) {
     plateKey = key;
     stackDoner(plateStack, items); // bread always goes at the bottom, everything else stacks on top in the order added
     $('plateList').textContent = items.length ? items.map(ingLabel).join(' ') : 'Plate: empty';
   }
-  const sk = sillItems ? sillItems.join(',') : '';
-  if (sk !== sillKey) { sillKey = sk; stackDoner(sillStack, sillItems || []); sillDoner.visible = !!sillItems; }
-  $('sillMsg').textContent = sillItems ? '🥙 on the sill: waiting for the cashier' : carried ? '🥙 the cashier is handing it over' : '';
-  $('serveBtn').disabled = !!(sillItems || carried);
+  $('sillMsg').textContent = carried ? '🥙 Bärbel is serving it' : '';
+  $('serveBtn').disabled = !!carried;
+  cashierHeld.set(carried || null);
+}
+function passed(items) { // the 'carry' broadcast: your döner went through
+  stackDoner(sillStack, items || []); sillDoner.visible = true; passedAt = performance.now() / 1000;
+  audio.ding(); toast('🥙 PASSED! Bärbel has it');
+}
+function animatePassed(now) {
+  if (!sillDoner.visible) return;
+  const t = now - passedAt;
+  if (t > 1.1) { sillDoner.visible = false; return; }
+  const k = Math.max(0, (t - 0.45) / 0.65), e = k * k; // sits on the sill, then slides out to her
+  sillDoner.position.set(SILL_AT.x * (1 - e), SILL_AT.y + Math.sin(Math.min(1, t / 0.25) * Math.PI) * 0.06 + e * 0.15, SILL_AT.z - e * 1.0);
+  sillDoner.scale.setScalar(1.3 * (1 - 0.4 * e));
+}
+
+// ---------- the one instruction at the top, always (from your plate and the relayed state) ----------
+const banner = makeBanner();
+let customerId = null, newRegularUntil = 0;
+function updateBanner(now) {
+  if (!state || state.phase !== 'playing') return banner.set('');
+  const c = state.customer, urgent = c && c.patience <= 10 ? ' urgent' : '';
+  if (c && c.id !== customerId) { customerId = c.id; newRegularUntil = now + 2; }
+  if (state.carry) banner.set('BÄRBEL IS SERVING IT…', '');
+  else if (!c) banner.set('WAITING FOR A REGULAR…', '');
+  else if (now < newRegularUntil && !state.plate.length) banner.set('NEW REGULAR! WATCH THE DANCE', '', 'new');
+  else if (!state.plate.length) banner.set('① WATCH BÄRBEL → FIND THE DANCE IN YOUR BOOK', 'then tap the bread', urgent.trim());
+  else if (state.plate.length < 2) banner.set('② ADD THE FILLING', 'meat, veg, onion: check the book', urgent.trim());
+  else banner.set('③ DONE? PRESS ENTER TO PASS IT', 'or tap the plate · ⌫ starts over', 'pulse' + urgent);
 }
 
 // ---------- network ----------
@@ -236,7 +266,7 @@ connect((m) => {
   if (m.type === 'state') {
     state = m.state;
     updateTopbar(state);
-    renderPlate(state.plate, state.sill, state.carry);
+    renderPlate(state.plate, state.carry);
     renderBook();
     const L = levelInfo(state.level);
     $('lobbyLevel').firstChild.textContent = `Difficulty: ${L.emoji} ${L.label} `;
@@ -247,21 +277,29 @@ connect((m) => {
   if (m.type === 'pose' && Array.isArray(m.v) && m.v.length === 15) pose = m.v;
   if (m.type === 'strobe') strobeUntil = performance.now() / 1000 + m.duration;
   if (m.type === 'result') showResult(m);
-  if (m.type === 'started') { audio.restartSong(); loadRules(true).then(() => { bookKey = ''; renderBook(); }); }
+  if (m.type === 'carry') passed(m.items);
+  if (m.type === 'started') { audio.restartSong(); loadRules(true).then(() => { bookKey = ''; renderBook(); }); if (audio.ctx) roleCard(); }
 });
 
+// the stamp, plus one short line when the döner was wrong (what it should have been)
+const short = (items) => items.map((i) => ingLabel(i).split(' ')[0]).join('') || 'nothing';
 function showResult(m) {
-  audio.blip(m.ok);
-  const f = $('flash');
-  f.style.background = m.ok ? '#00e67655' : '#ff174455';
-  f.innerHTML = `${m.ok ? `✅ ${m.name}: PERFECT` : m.reason === 'Wrong döner' ? '❌ Wrong döner' : `❌ ${m.name} ${m.reason}`} ${m.delta > 0 ? '+' : ''}${m.delta}` + (m.ok ? '' : whyHtml(m));
-  showFlash(f, m.ok);
+  showStamp(m, !m.ok && m.reason === 'Wrong döner' ? `${esc(m.name)} wanted ${esc(m.order)}: ${short(m.expected)} · you made ${short(m.made)}` : '');
 }
 
+const ic = (k) => `<img src="${poseIcon(k, '#ffd600')}" alt="">`;
+function roleCard() {
+  showRoleCard({ name: 'BRUNO', role: 'CHEF', steps: [
+    { icons: `👀${ic('U')}`, text: 'Watch Bärbel' },
+    { icons: '📖🔍', text: 'Find the dance in your book' },
+    { icons: '🥙➡️🐻', text: 'Cook it and pass it <span class="key">ENTER</span>' },
+  ] });
+}
 $('startBtn').onclick = () => {
   audio.init();
   if (!state || state.phase !== 'playing') send('start');
   $('lobby').style.display = 'none';
+  roleCard();
 };
 
 // ---------- urgency: someone bangs on the counter (regular at 30 s or less; the chef gets no number) ----------
@@ -288,6 +326,9 @@ renderer.setAnimationLoop(() => {
   club.update(beat, now);
   resetPose(cashier);
   applyPose(cashier, pose || POSES.I.v, Math.min(1, dt * 10));
+  cashierHeld.update();
+  animatePassed(now);
+  updateBanner(now);
   cashier.group.position.y = 0.45 + Math.abs(Math.sin(beat * Math.PI)) * 0.025;
   updateUrgency(now, dt);
   spit.rotation.y += dt * 1.2;

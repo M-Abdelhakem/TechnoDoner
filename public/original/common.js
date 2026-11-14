@@ -275,6 +275,35 @@ export const audio = {
     g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
     o.connect(g).connect(this.master); o.start(t); o.stop(t + 0.13);
   },
+  // a bright two-note bell: the döner just landed in the cashier's paws
+  ding() {
+    if (!this.ctx) return;
+    for (const [dt, f] of [[0, 1318.5], [0.11, 1975.5]]) {
+      const t = this.ctx.currentTime + dt;
+      for (const [mul, vol] of [[1, 0.22], [2.76, 0.05]]) {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f * mul;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+        o.connect(g).connect(this.master); o.start(t); o.stop(t + 0.72);
+      }
+    }
+  },
+  // the result stamp: a thump, then a rising fanfare (right) or a low buzzer (wrong / left)
+  stamp(ok) {
+    if (!this.ctx) return;
+    const c = this.ctx, t0 = c.currentTime;
+    const th = c.createOscillator(), tg = c.createGain();
+    th.type = 'sine'; th.frequency.setValueAtTime(160, t0); th.frequency.exponentialRampToValueAtTime(45, t0 + 0.15);
+    tg.gain.setValueAtTime(0.5, t0); tg.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
+    th.connect(tg).connect(this.master); th.start(t0); th.stop(t0 + 0.22);
+    const notes = ok ? [[0.05, 659], [0.13, 880], [0.21, 1319]] : [[0.05, 155], [0.3, 117]];
+    for (const [dt, f] of notes) {
+      const t = t0 + dt, o = c.createOscillator(), g = c.createGain(), len = ok ? 0.22 : 0.32;
+      o.type = ok ? 'square' : 'sawtooth'; o.frequency.value = f;
+      g.gain.setValueAtTime(ok ? 0.1 : 0.16, t); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+      o.connect(g).connect(this.master); o.start(t); o.stop(t + len + 0.02);
+    }
+  },
 };
 
 // ---------- materials / helpers ----------
@@ -604,3 +633,83 @@ export function showFlash(f, ok) {
   clearTimeout(f.t); f.t = setTimeout(hide, ok ? 1500 : 7000);
 }
 addEventListener('keydown', (e) => { const f = document.getElementById('flash'); if (e.key === 'Escape' && f && f.hide) f.hide(); });
+
+
+// ---------- party-game layer: the one instruction, the role card, the result stamp ----------
+// The banner: one big instruction at the top of the screen, always. Its main line pops every time it changes; `cls`
+// adds a look ('go' flashing green, 'urgent' flashing red, 'pulse', 'new') and 'tap' makes it a button for onTap.
+export function makeBanner(onTap) {
+  const el = document.createElement('div');
+  el.id = 'banner'; el.innerHTML = '<div class="main"></div><div class="sub"></div>'; el.hidden = true;
+  document.body.appendChild(el);
+  const main = el.firstElementChild, sub = el.lastElementChild;
+  let text = null;
+  el.addEventListener('pointerdown', (e) => { if (el.classList.contains('tap') && onTap) { e.preventDefault(); onTap(); } });
+  return {
+    el,
+    set(m, s = '', cls = '') {
+      el.hidden = !m;
+      if (m !== text) { text = m; main.textContent = m || ''; main.classList.remove('pop'); void main.offsetWidth; if (m) main.classList.add('pop'); }
+      if (sub.textContent !== s) sub.textContent = s;
+      if (el.className !== cls) el.className = cls;
+    },
+  };
+}
+
+// The role card at the start of a round: who you are and your three steps, ~4 s, tap to skip.
+// steps: [{ icons: html, text }]
+let roleEl = null, roleTimer = 0;
+export function showRoleCard({ name, role, steps, ms = 4000 }) {
+  if (!roleEl) {
+    roleEl = document.createElement('div'); roleEl.id = 'roleCard';
+    document.body.appendChild(roleEl);
+    roleEl.addEventListener('pointerdown', hideRoleCard);
+    addEventListener('keydown', (e) => { if (roleEl.classList.contains('show') && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) { e.stopImmediatePropagation(); hideRoleCard(); } }, true);
+  }
+  if (roleEl.classList.contains('show')) return;
+  roleEl.innerHTML = `<h1>YOU ARE ${name} <span>· ${role}</span></h1>
+    <div class="rsteps">${steps.map((s, i) => `<div class="rstep" style="animation-delay:${0.15 + i * 0.25}s"><div class="n">${'①②③④'[i]}</div><div class="ic">${s.icons}</div><div class="t">${s.text}</div></div>`).join('')}</div>
+    <div class="bar"><div></div></div><div class="skip">tap to start</div>`;
+  roleEl.classList.add('show');
+  const bar = roleEl.querySelector('.bar div');
+  requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.transition = `width ${ms}ms linear`; bar.style.width = '100%'; }));
+  clearTimeout(roleTimer); roleTimer = setTimeout(hideRoleCard, ms);
+}
+export function hideRoleCard() { clearTimeout(roleTimer); if (roleEl) roleEl.classList.remove('show'); }
+export const roleCardOpen = () => !!(roleEl && roleEl.classList.contains('show'));
+
+// The result stamp, big and centred for ~1.5 s, with a sound and a tint (both pages): "PERFECT! +€N",
+// "WRONG DÖNER! −€50" or "<NAME> LEFT! −€50". `card` (html) adds a short line under it for a few seconds.
+let stampEl = null, stampCard = null;
+export function showStamp(m, card = '') {
+  if (!stampEl) {
+    stampEl = document.createElement('div'); stampEl.id = 'stamp';
+    stampCard = document.createElement('div'); stampCard.id = 'stampCard';
+    stampCard.onclick = () => stampCard.classList.remove('show');
+    document.body.append(stampEl, stampCard);
+  }
+  const euro = (d) => `${d < 0 ? '\u2212' : '+'}€${Math.abs(d)}`;
+  const text = m.ok ? `PERFECT! ${euro(m.delta)}` : m.reason === 'Wrong döner' ? `WRONG DÖNER! ${euro(m.delta)}` : `${String(m.name).toUpperCase()} LEFT! ${euro(m.delta)}`;
+  stampEl.textContent = text;
+  stampEl.className = m.ok ? 'ok' : 'bad'; void stampEl.offsetWidth; stampEl.classList.add('show');
+  clearTimeout(stampEl.t); stampEl.t = setTimeout(() => stampEl.classList.remove('show'), 1500);
+  stampCard.innerHTML = card; stampCard.classList.toggle('show', !!card);
+  clearTimeout(stampCard.t); if (card) stampCard.t = setTimeout(() => stampCard.classList.remove('show'), 4500);
+  audio.stamp(m.ok);
+  const f = document.getElementById('flash');
+  if (f) { f.innerHTML = ''; f.style.background = m.ok ? '#00e67640' : '#ff174450'; showFlash(f, true); }
+}
+
+// a döner held in a bear's paw (armP's): kept upright whatever the arm does; set(items) or set(null)
+const QA = new THREE.Quaternion(), QB = new THREE.Quaternion();
+export function makeHeldDoner(bear, scale = 0.42) {
+  const g = new THREE.Group(); g.position.set(0, -0.46, 0.08); g.visible = false; bear.elbowP.add(g);
+  const plate = makePlateMesh(); plate.scale.setScalar(scale); g.add(plate);
+  const stack = new THREE.Group(); stack.position.y = 0.02; stack.scale.setScalar(scale); g.add(stack);
+  let key = '';
+  return {
+    group: g,
+    set(items) { const k = items ? items.join(',') : ''; if (k === key) return; key = k; stackDoner(stack, items || []); g.visible = !!k; },
+    update() { if (!g.visible) return; bear.elbowP.getWorldQuaternion(QA); bear.group.getWorldQuaternion(QB); g.quaternion.copy(QA.invert().multiply(QB)); },
+  };
+}

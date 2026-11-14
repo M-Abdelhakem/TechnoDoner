@@ -2,12 +2,13 @@
 // HTML overlays — playing the Regulars loop. Its server.js became this Durable Object, one game per ?room= (default
 // 'main'). The client is public/original/.
 //   GET  .../original/events[?room=x]  SSE stream: `retry: 1000`, the current state (+ the latest cashier pose), then
-//        every broadcast: state (4×/s while playing), started, result, strobe, sill, signal, pose
+//        every broadcast: state (4×/s while playing), started, result, strobe, carry, signal, pose
 //   POST .../original/action[?room=x]  one action as JSON ({type, ...}), answered 204
 // The loop: one regular at a time steps up and dances their routine. The cashier copies it with her body (camera or
 // keys) and her pose is relayed here (`pose`, ~15×/s, rebroadcast as is, no video). The chef reads it, looks the dance up
-// in his book of regulars, cooks their usual and `serve`s it onto the window sill; the cashier `take`s it and `give`s it
-// to the regular, which is when it is scored (multiset check). rules.json (fetched from the static assets on `level` and
+// in his book of regulars, cooks their usual and `serve`s it: it goes straight into the cashier's paws (`carry`, and a
+// `carry` broadcast so the chef sees it pass the sill and the cashier hears it land). She `give`s it to the regular by
+// raising a hand, which is when it is scored (multiset check). rules.json (fetched from the static assets on `level` and
 // `start`) holds the regulars, their usuals and the difficulty numbers. The 0.25 s tick only runs while a client is
 // connected, so a room nobody watches is paused.
 
@@ -53,10 +54,10 @@ function levelOf(rules, id) {
 const danceFor = (R, len) => (len >= 4 && R.d4 ? R.d4 : R.dance.slice(0, len));
 
 // ---------- state ----------
-// customer: what both pages may see (no order: only the chef's book knows it); sill: the döner the chef put on the
-// window sill; carry: the döner in the cashier's paws (both null or arrays of ingredient ids)
+// customer: what both pages may see (no order: only the chef's book knows it); carry: the döner in the cashier's paws
+// (null or an array of ingredient ids). There is no sill in the state: the chef's sill is only a "passed" animation.
 function freshState(level = 'normal') {
-  return { phase: 'lobby', timeLeft: 0, roundSeconds: 0, hour: 2, clock: '02:00', score: 0, served: 0, failed: 0, customer: null, plate: [], sill: null, carry: null, level };
+  return { phase: 'lobby', timeLeft: 0, roundSeconds: 0, hour: 2, clock: '02:00', score: 0, served: 0, failed: 0, customer: null, plate: [], carry: null, level };
 }
 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
@@ -112,7 +113,6 @@ export class OriginalGame {
     };
     this.orderName = O.name;
     state.plate = [];
-    state.sill = null;
     state.carry = null;
   }
 
@@ -129,7 +129,7 @@ export class OriginalGame {
       state.failed++;
     }
     state.score += delta;
-    made = made || state.carry || state.sill || state.plate;
+    made = made || state.carry || state.plate;
     this.broadcast({ type: 'result', ok, reason, delta, name: c.name, order: this.orderName, expected: [...this.want], made: [...made], cid: c.id });
     this.newCustomer();
   }
@@ -164,7 +164,6 @@ export class OriginalGame {
       state.timeLeft = 0;
       state.customer = null;
       state.plate = [];
-      state.sill = null;
       state.carry = null;
     }
     this.broadcastState();
@@ -211,24 +210,17 @@ export class OriginalGame {
       case 'add':
         if (playing && INGREDIENTS.includes(a.ing) && s.plate.length < PLATE_MAX) s.plate.push(a.ing);
         break;
-      case 'trash': // the chef starts over: the plate and anything still on the sill go in the bin
+      case 'trash': // the chef starts over (what the cashier already holds stays in her paws)
         s.plate = [];
-        s.sill = null;
         break;
-      case 'serve': // chef: the plate goes onto the window sill (one döner at a time)
-        if (playing && s.customer && !s.sill && !s.carry && s.plate.length) {
-          s.sill = s.plate;
+      case 'serve': // chef: the plate goes through the window straight into the cashier's paws (one döner at a time)
+        if (playing && s.customer && !s.carry && s.plate.length) {
+          s.carry = s.plate;
           s.plate = [];
-          this.broadcast({ type: 'sill' });
+          this.broadcast({ type: 'carry', items: [...s.carry], cid: s.customer.id });
         }
         break;
-      case 'take': // the cashier picks the döner up from the sill
-        if (playing && s.sill && !s.carry) {
-          s.carry = s.sill;
-          s.sill = null;
-        }
-        break;
-      case 'give': // ...and hands it to the regular: this is when it is scored
+      case 'give': // the cashier hands it to the regular: this is when it is scored
         if (playing && s.customer && s.carry && (!a.cid || a.cid === s.customer.id)) {
           const made = s.carry;
           const ok = sameMultiset(made, this.want);

@@ -36,3 +36,42 @@ button.big:hover { background: #ff33bb; }
 .levels button:disabled { cursor: default; }
 @keyframes tdPulse { 50% { opacity: 0.45; } }
 @keyframes tdFlash { 50% { opacity: 0.25; } }
+/* ---------- party-game layer (common.js makeBanner / showRoleCard / showStamp) ---------- */
+#banner { position: fixed; z-index: 8; top: 58px; left: 50%; transform: translateX(-50%); width: min(820px, 94vw); text-align: center; pointer-events: none; padding: 10px 18px 12px; border-radius: 18px; background: #000d; border: 3px solid #ff00aa; box-shadow: 0 0 30px #ff00aa88; color: #fff; }
+#banner[hidden] { display: none; }
+#banner .main { font-size: clamp(22px, 4vw, 40px); font-weight: 900; line-height: 1.1; letter-spacing: 0.5px; }
+#banner .sub { font-size: clamp(14px, 1.9vw, 19px); font-weight: 700; color: #ccc; margin-top: 4px; }
+#banner .sub:empty { display: none; }
+#banner .main.pop { animation: bnPop .5s cubic-bezier(.2, 1.6, .4, 1); }
+#banner.tap { pointer-events: auto; cursor: pointer; }
+#banner.new { border-color: #ffd600; background: #2e2200ee; box-shadow: 0 0 36px #ffd600aa; }
+#banner.pulse { border-color: #ffd600; animation: bnPulse 1s ease-in-out infinite; }
+#banner.go { border-color: #00e676; background: #003a1cee; box-shadow: 0 0 40px #00e676; animation: bnGo .6s steps(2) infinite; }
+#banner.go .sub { color: #fff; }
+#banner.urgent { border-color: #ff1744; box-shadow: 0 0 40px #ff1744; animation: bnUrgent .5s steps(2) infinite; }
+@keyframes bnPop { 0% { transform: scale(1.5); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes bnPulse { 50% { box-shadow: 0 0 46px #ffd600; transform: translateX(-50%) scale(1.04); } }
+@keyframes bnGo { 50% { background: #00c853ee; } }
+@keyframes bnUrgent { 50% { background: #b0001eee; } }
+#roleCard { position: fixed; inset: 0; z-index: 25; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: #05010af4; text-align: center; padding: 20px; cursor: pointer; }
+#roleCard.show { display: flex; animation: rcIn .35s ease-out; }
+#roleCard h1 { margin: 0; font-size: clamp(34px, 7vw, 78px); color: #ff00aa; text-shadow: 0 0 22px #ff00aa, 0 0 44px #7c4dff; line-height: 1.05; }
+#roleCard h1 span { color: #00e5ff; text-shadow: 0 0 18px #00e5ff; white-space: nowrap; }
+#roleCard .rsteps { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+#roleCard .rstep { width: 230px; background: #1a0d24; border: 3px solid #7c4dff; border-radius: 20px; padding: 12px 14px 16px; animation: rcStep .4s both cubic-bezier(.2, 1.4, .4, 1); }
+#roleCard .rstep .n { font-size: 40px; font-weight: 900; color: #ffd600; line-height: 1; }
+#roleCard .rstep .ic { height: 96px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 54px; }
+#roleCard .rstep .ic img { width: 84px; height: 84px; }
+#roleCard .rstep .t { font-size: 21px; font-weight: 900; line-height: 1.2; }
+#roleCard .bar { width: min(500px, 80vw); height: 8px; background: #fff2; border-radius: 4px; overflow: hidden; }
+#roleCard .bar div { height: 100%; width: 0; background: #00e5ff; }
+#roleCard .skip { color: #aaa; font-size: 15px; font-weight: 700; }
+@keyframes rcIn { from { opacity: 0; } }
+@keyframes rcStep { from { opacity: 0; transform: translateY(30px) scale(0.8); } }
+#stamp { position: fixed; z-index: 16; left: calc(50% + var(--bookOpen, 0px) / 2); top: 44%; transform: translate(-50%, -50%) rotate(-7deg); pointer-events: none; display: none; font-size: clamp(26px, calc((100vw - var(--bookOpen, 0px)) * 0.065), 96px); font-weight: 900; padding: 12px 34px; border: 8px solid; border-radius: 22px; background: #000c; white-space: nowrap; letter-spacing: 1px; }
+#stamp.show { display: block; animation: stampIn .32s cubic-bezier(.2, 1.6, .4, 1); }
+#stamp.ok { color: #00e676; border-color: #00e676; box-shadow: 0 0 60px #00e676, inset 0 0 30px #00e67655; }
+#stamp.bad { color: #ff1744; border-color: #ff1744; box-shadow: 0 0 60px #ff1744, inset 0 0 30px #ff174455; }
+@keyframes stampIn { from { opacity: 0; transform: translate(-50%, -50%) rotate(-7deg) scale(2.6); } }
+#stampCard { position: fixed; z-index: 16; left: calc(50% + var(--bookOpen, 0px) / 2); top: calc(44% + clamp(60px, 9vw, 110px)); transform: translateX(-50%); display: none; font-size: 20px; font-weight: 700; background: #000d; border: 2px solid #ff1744; border-radius: 12px; padding: 8px 16px; white-space: nowrap; cursor: pointer; max-width: calc(94vw - var(--bookOpen, 0px)); overflow: hidden; text-overflow: ellipsis; }
+#stampCard.show { display: block; }

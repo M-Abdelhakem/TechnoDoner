@@ -10,7 +10,7 @@
   #pad #camBtn { width: 118px; border-color: #00e5ff; font-size: 14px; }
   #pad #camBtn.on { background: #00e5ff; color: #000; }
   #pad.cam button:not(#camBtn) { opacity: 0.45; }
-  #topBtns { top: 84px; right: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  #topBtns { top: 180px; right: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
   #topBtns button { font-size: 16px; font-weight: 900; padding: 8px 14px; border-radius: 12px; border: 0; cursor: pointer; background: #7c4dff; color: #fff; }
   #signal { top: 30%; right: 6%; font-size: 30px; font-weight: 900; opacity: 0; transition: opacity .2s; background: #000c; border: 3px solid #00e5ff; padding: 10px 20px; border-radius: 16px; box-shadow: 0 0 30px #00e5ff; pointer-events: none; }
   /* the regular's bubble (name + dance) and patience ring, placed over the 3D customer */
@@ -25,7 +25,10 @@
   #pring::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: #05010add; }
   #pring b { position: relative; font-size: 19px; color: var(--c, #00e676); }
   #pring.s3 { animation: tdFlash .35s steps(2) infinite; }
-  #handMsg { top: 128px; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: 900; padding: 8px 18px; border-radius: 12px; background: #ffd600; color: #111; box-shadow: 0 0 24px #ffd60088; pointer-events: none; white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis; }
+  #patience { top: 160px; }
+  /* the big fallback serve button (also F / G, a tap on the banner, a click on the regular) */
+  #serveBig { bottom: 118px; left: 50%; transform: translateX(-50%); font-size: clamp(24px, 4vw, 38px); font-weight: 900; padding: 14px 34px; border-radius: 18px; border: 4px solid #fff; background: #00c853; color: #fff; cursor: pointer; box-shadow: 0 0 36px #00e676; white-space: nowrap; animation: tdPulse 0.9s ease-in-out infinite; pointer-events: auto; }
+  #serveBig[hidden] { display: none; }
   #selfFrame { position: fixed; z-index: 3; left: 12px; bottom: 120px; width: 200px; height: 150px; border: 3px solid #ffcf5a; border-radius: 8px; pointer-events: none; }
   #selfFrame span { position: absolute; top: -24px; left: -3px; right: -3px; text-align: center; background: #000b; color: #ffcf5a; font-size: 11px; font-weight: 900; padding: 3px 0; border-radius: 6px; letter-spacing: 1px; }
   #patience.s1 div { background: #ffea00; } #patience.s2 div { background: #ff7a30; } #patience.s3 div { background: #ff1744; animation: tdFlash .35s steps(2) infinite; }
@@ -40,7 +43,7 @@
 <div id="topbar" class="hud"><span class="big">🕒 <b id="clock">02:00</b></span><span id="timeBox">⏳ <b id="time">0</b>s <span id="mmss">0:00</span></span><span>⭐ <b id="score">0</b></span><span>🥙 <b id="served">0</b></span><span id="levelTag">🙂 Normal</span><button id="muteBtn">🔊</button></div>
 <div id="patience" class="hud"><div></div></div>
 <div id="topBtns" class="hud"><button id="helpBtn">❔ How to play <span class="key">H</span></button></div>
-<div id="handMsg" class="hud" hidden></div>
+<button id="serveBig" class="hud" hidden>🥙 SERVE! <span class="key">F</span></button>
 <div id="bubble" hidden><div class="nm"></div><div class="dance"></div></div>
 <div id="pring" hidden><b>0</b></div>
 <div id="selfFrame"><span>WHAT THE CHEF SEES</span></div>
@@ -52,13 +55,13 @@
     <li>🐻 A <b>regular</b> steps up and dances their routine. You can't hear a thing, and you don't know what they eat.</li>
     <li>🕺 <b>Copy the dance</b> with your body (📷 camera) or the keys <span class="key">1</span>–<span class="key">6</span> (<span class="key">0</span> rest). The chef sees your bear in his window and looks the dance up in his book.</li>
     <li>⌚ Running late? <span class="key">7</span> or raise one arm and wave: <b>Hurry!</b> The chef answers 🙌 "got it" or 🤷 "again".</li>
-    <li>🥙 The döner appears on the <b>pass</b> by the kitchen hatch. <b>Take it</b> (click it, or <span class="key">F</span>) and <b>give it to the regular</b> (click them, or <span class="key">F</span>). With the camera: hold your right paw on it for ½ s.</li>
+    <li>🔔 <i>Ding!</i> Bruno's döner lands straight in your paws. <b>Raise a hand above your head</b> to serve it (hold it up until the ring is full). Or press <span class="key">F</span>, tap the green <b>SERVE</b> button, or click the regular.</li>
   </ol>
   <p>⏱️ The ring over the regular is their patience: <b style="color:#ffea00">yellow</b> at 60 s, <b style="color:#ff7a30">orange</b> at 30 s, flashing <b style="color:#ff1744">red</b> at 10 s.</p>
 </template>
 <div id="help" class="overlay"><h2>❔ How to play: Cashier</h2><div class="stepsSlot"></div><button class="big" id="helpClose">GOT IT</button></div>
 <div id="lobby" class="overlay">
-  <h1>🧾 CASHIER BEAR</h1>
+  <h1>🧾 BÄRBEL · CASHIER</h1>
   <h2 id="lobbyMsg">TechnoDöner · Original. Copy the regulars' dances, hand over the döner.</h2>
   <div class="stepsSlot"></div>
   <div class="levels" id="levels"></div>
@@ -74,7 +77,7 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { connect, send, audio, showFlash, makeBear, resetPose, makeRegular, makeClub, makeRenderer, fitCamera, mat, glow, textSprite, CHEF_SIGNALS,
+import { connect, send, audio, makeBanner, showRoleCard, showStamp, makeHeldDoner, makeBear, resetPose, makeRegular, makeClub, makeRenderer, fitCamera, mat, glow, textSprite, CHEF_SIGNALS,
   loadRules, rulesNow, levelInfo, updateTopbar, setupMute, patienceStage, STAGE_COLOR, stackDoner, makePlateMesh, disposeTree,
   POSES, POSE_KEYS, danceAt, applyPose, quant, poseIcon } from './common.js';
 import { createCamera } from './camera.js';
@@ -112,27 +115,27 @@ const chef = makeBear({ fur: '#6d4c41', apron: true, hat: 'chef' });
 chef.group.scale.setScalar(0.62); chef.group.position.set(HX, 0.75, 0.1); scene.add(chef.group);
 let chefSignal = null, chefSignalStart = -9;
 
-// ---------- the döner on the pass / in your paws ----------
+// ---------- the döner in your paws: Bruno serves it straight there (it flies in from the hatch) ----------
 const PASS_SPOT = new THREE.Vector3(HX, 1.23, HZ + 0.25);
-const passDoner = new THREE.Group(); passDoner.position.copy(PASS_SPOT); passDoner.visible = false; scene.add(passDoner);
-const passPlate = makePlateMesh(); passPlate.scale.setScalar(0.6); passDoner.add(passPlate);
-const passStack = new THREE.Group(); passStack.position.y = 0.03; passStack.scale.setScalar(0.6); passDoner.add(passStack);
-const passGlow = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.02, 8, 32), glow('#ffd600')); passGlow.rotation.x = Math.PI / 2; passGlow.position.y = 0.01; passDoner.add(passGlow);
-const held = new THREE.Group(); held.position.set(0.5, -0.45, -1.1); held.rotation.x = 0.5; held.visible = false; camera.add(held);
+const HELD_AT = new THREE.Vector3(0.5, -0.45, -1.1);
+const held = new THREE.Group(); held.position.copy(HELD_AT); held.rotation.x = 0.5; held.visible = false; camera.add(held);
 const heldPlate = makePlateMesh(); heldPlate.scale.setScalar(0.5); held.add(heldPlate);
 const heldStack = new THREE.Group(); heldStack.position.y = 0.025; heldStack.scale.setScalar(0.5); held.add(heldStack);
-let passKey = '', heldKey = '';
+const heldGlow = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.015, 8, 32), glow('#00e676')); heldGlow.rotation.x = Math.PI / 2; held.add(heldGlow);
+let heldKey = '', heldSince = -9;
+const heldFrom = new THREE.Vector3();
 
 // ---------- you, as the chef sees you (a small second view, bottom left) ----------
 const selfScene = new THREE.Scene(); selfScene.background = new THREE.Color('#1d1030');
 selfScene.add(new THREE.HemisphereLight('#ffffff', '#302040', 1.6));
 const selfLight = new THREE.DirectionalLight('#ffe0ff', 1.2); selfLight.position.set(1, 2, 3); selfScene.add(selfLight);
 const me = makeBear({ fur: '#a0522d', shirt: '#e63946', hat: 'cap', apron: true }); selfScene.add(me.group);
+const meHeld = makeHeldDoner(me);
 const selfCam = new THREE.PerspectiveCamera(40, 200 / 150, 0.1, 20); selfCam.position.set(0, 1.45, 4.6); selfCam.lookAt(0, 1.3, 0);
 
 // ---------- the regular at the counter ----------
 const STAND = new THREE.Vector3(-0.5, 0, 0.5);
-let customer = null, customerId = null, customerEnter = 0, customerStage = 0;
+let customer = null, customerId = null, customerEnter = 0, customerStage = 0, newRegularUntil = 0;
 function removeCustomer() {
   if (!customer) return;
   scene.remove(customer.group); disposeTree(customer.group);
@@ -147,6 +150,7 @@ function syncCustomer(c) {
   customer = makeRegular(R); customer.turn = 0;
   customer.group.position.set(-6, 0, STAND.z); scene.add(customer.group);
   customerId = c.id; customerEnter = performance.now() / 1000; customerStage = patienceStage(c.patience);
+  newRegularUntil = customerEnter + 2;
   renderBubble(c);
 }
 function renderBubble(c) {
@@ -184,52 +188,70 @@ function updatePose(now, dt) {
   send('pose', { v: q });
 }
 
-// ---------- hand-over: take from the pass, give to the regular ----------
+// ---------- serving: the döner is already in your paws; raise a hand (or F / G, the button, a click) ----------
 const proj = (v) => { const p = v.clone().project(camera); return p.z > 1 ? null : { x: (p.x + 1) / 2 * innerWidth, y: (1 - p.y) / 2 * innerHeight }; };
 const customerPoint = () => customer && new THREE.Vector3(customer.group.position.x, 1.1, customer.group.position.z);
-const canTake = () => !!(state && state.phase === 'playing' && state.sill && !state.carry);
 const canGive = () => !!(state && state.phase === 'playing' && state.carry && customer && state.customer && customerId === state.customer.id);
-function take() { if (canTake()) { send('take'); audio.pop(); } }
-function give() { if (canGive()) { send('give', { cid: customerId }); audio.pop(); } }
+// one give per regular (the camera, a key and a click can all fire at once); retried after 2 s if nothing came back
+let gaveFor = null, gaveAt = 0;
+const gave = () => gaveFor === customerId && performance.now() - gaveAt < 2000;
+function give() {
+  if (!canGive() || gave()) return;
+  gaveFor = customerId; gaveAt = performance.now(); send('give', { cid: customerId }); audio.pop();
+}
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
 renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (!canGive()) return;
   mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   ray.setFromCamera(mouse, camera);
   const near = (v, r) => { const p = v && proj(v); return p && Math.hypot(p.x - e.clientX, p.y - e.clientY) < r; };
-  if (canTake() && (ray.intersectObjects([passDoner, pass], true).length || near(PASS_SPOT, 110))) take();
-  else if (canGive() && (ray.intersectObject(customer.group, true).length || near(customerPoint(), 150))) give();
+  if (ray.intersectObject(customer.group, true).length || near(customerPoint(), 170)) give();
 });
+$('serveBig').onclick = (e) => { e.currentTarget.blur(); give(); };
 const cam = createCamera({
   button: camBtn,
   onState: (on) => pad.classList.toggle('cam', on),
-  targets: () => {
-    const out = [];
-    // zones outside the body, where the camera can see the hand: out to the right edge to take, above the head to give
-    if (canTake()) out.push({ key: 'pass', x: innerWidth * 0.9, y: innerHeight * 0.45, r: innerWidth * 0.12, fire: take });
-    if (canGive()) out.push({ key: 'customer', x: innerWidth / 2, y: innerHeight * 0.07, r: innerHeight * 0.17, fire: give });
-    return out;
-  },
+  canServe: () => (canGive() && !gave() ? state.customer.name : null),
+  onServe: give,
+  carrying: () => !!(state && state.carry),
 });
-function updateHandover() {
-  let msg = '';
-  const pawHint = cam.on ? (state && state.sill ? ', or hold your hand out to the right' : ', or lift your hand above your head') : '';
-  if (state && state.phase === 'playing') {
-    if (state.sill) msg = `🥙 Döner on the pass! Take it: click it (or F${pawHint})`;
-    else if (state.carry && state.customer) msg = `🐻 Give it to ${state.customer.name}: click them (or F${pawHint})`;
+
+// the one instruction at the top, always
+const banner = makeBanner(give);
+function updateBanner(now) {
+  if (!state || state.phase !== 'playing') return banner.set('');
+  const c = state.customer, urgent = c && patienceStage(c.patience) >= 3 ? ' urgent' : '';
+  const here = customer && c && customerId === c.id;
+  if (here && state.carry && !gave()) banner.set(`② RAISE YOUR HAND TO SERVE ${c.name.toUpperCase()}!`, 'or press F / tap here', 'go tap');
+  else if (here && state.carry) banner.set(`SERVING ${c.name.toUpperCase()}…`, '');
+  else if (!here || now - customerEnter < 0.9) banner.set('WAITING FOR A REGULAR…', '');
+  else if (now < newRegularUntil) banner.set('NEW REGULAR! WATCH THE DANCE', `${c.name} steps up`, 'new');
+  else banner.set('① COPY THE DANCE!', urgent ? `HURRY! ${c.name} is about to leave` : 'Bruno reads your moves in the window', urgent.trim());
+}
+function updateHandover(now) {
+  const can = canGive() && !gave();
+  $('serveBig').hidden = !can;
+  if (can) { const t = `🥙 SERVE ${state.customer.name.toUpperCase()}!`; if ($('serveBig').firstChild.textContent !== t + ' ') $('serveBig').firstChild.textContent = t + ' '; }
+  const items = state && state.carry;
+  const hk = items ? items.join(',') : '';
+  if (hk !== heldKey) {
+    if (hk && !heldKey) { heldSince = now; heldFrom.copy(camera.worldToLocal(PASS_SPOT.clone())); }
+    heldKey = hk; stackDoner(heldStack, items || []); held.visible = !!hk;
   }
-  $('handMsg').hidden = !msg;
-  if (msg && $('handMsg').textContent !== msg) $('handMsg').textContent = msg;
-  const pk = state && state.sill ? state.sill.join(',') : '';
-  if (pk !== passKey) { passKey = pk; stackDoner(passStack, (state && state.sill) || []); passDoner.visible = !!pk; }
-  const hk = state && state.carry ? state.carry.join(',') : '';
-  if (hk !== heldKey) { heldKey = hk; stackDoner(heldStack, (state && state.carry) || []); held.visible = !!hk; }
+  meHeld.set(items || null);
+  if (held.visible) { // fly in from the hatch, then a little bounce
+    const k = Math.min(1, (now - heldSince) / 0.35), e = 1 - Math.pow(1 - k, 3);
+    held.position.lerpVectors(heldFrom, HELD_AT, e);
+    held.position.y += Math.sin(Math.min(1, k) * Math.PI) * 0.15 + Math.abs(Math.sin(now * 4)) * 0.012;
+    heldGlow.material.color.setHSL(0.38, 1, 0.4 + 0.2 * Math.sin(now * 8));
+  }
 }
 
 addEventListener('keydown', (e) => {
   if (e.repeat || e.metaKey || e.ctrlKey) return;
   const k = e.key.toLowerCase();
   if (k === 'h') { toggleHelp(); return; }
-  if (k === 'f') { canTake() ? take() : give(); return; }
+  if (k === 'f' || k === 'g') { give(); return; }
   const n = '1234560'.indexOf(e.key);
   if (n >= 0 && n < 6) setPose(POSE_KEYS[n]);
   else if (e.key === '0') setPose('I');
@@ -274,10 +296,10 @@ connect((m) => {
     if (state.phase === 'playing' && !audio.ctx) $('startBtn').textContent = 'JOIN THE ROUND 🔊';
     if (state.phase === 'playing' && audio.ctx) $('lobby').style.display = 'none';
   }
-  if (m.type === 'started') { audio.restartSong(); loadRules(true).then(() => { levelsKey = ''; renderLevels(); }); }
+  if (m.type === 'started') { audio.restartSong(); loadRules(true).then(() => { levelsKey = ''; renderLevels(); }); if (audio.ctx) roleCard(); }
   if (m.type === 'result') showResult(m);
   if (m.type === 'strobe') strobeUntil = performance.now() / 1000 + m.duration;
-  if (m.type === 'sill') audio.pop();
+  if (m.type === 'carry') audio.ding();
   if (m.type === 'signal' && CHEF_SIGNALS[m.id]) {
     chefSignal = m.id; chefSignalStart = performance.now() / 1000;
     $('signal').textContent = m.id === 'ok' ? '🙌 Chef: got it!' : '🤷 Chef: again, please!';
@@ -285,19 +307,22 @@ connect((m) => {
   }
 });
 
-function showResult(m) {
-  audio.blip(m.ok);
-  const f = $('flash');
-  f.style.background = m.ok ? '#00e67655' : '#ff174477';
-  // the cashier never learns the orders: just who and whether it was right
-  f.innerHTML = `${m.ok ? `✅ ${esc(m.name)} is happy!` : m.reason === 'Wrong döner' ? `❌ Wrong döner for ${esc(m.name)}` : `❌ ${esc(m.name)} ${esc(m.reason)}`} ${m.delta > 0 ? '+' : ''}${m.delta}`;
-  showFlash(f, m.ok);
-}
+// the cashier never learns the orders: just whether it was right
+function showResult(m) { showStamp(m); }
 
+const ic = (k, c = '#fff') => `<img src="${poseIcon(k, c)}" alt="">`;
+function roleCard() {
+  showRoleCard({ name: 'BÄRBEL', role: 'CASHIER', steps: [
+    { icons: `👀${ic('U', '#ffd600')}`, text: 'Watch the regular dance' },
+    { icons: `${ic('C')}${ic('L')}`, text: 'Copy it with your body' },
+    { icons: `${ic('W', '#00e676')}🥙`, text: 'Raise your hand to serve' },
+  ] });
+}
 $('startBtn').onclick = () => {
   audio.init();
   if (!state || state.phase !== 'playing') send('start');
   $('lobby').style.display = 'none';
+  roleCard();
 };
 
 // ---------- the regular dances; impatience cues on top ----------
@@ -348,11 +373,11 @@ renderer.setAnimationLoop(() => {
   const beat = audio.beat();
   club.update(beat, now);
   updatePose(now, dt);
-  updateHandover();
+  updateHandover(now);
+  meHeld.update();
   cam.update(dt);
+  updateBanner(now);
   hatchNeon.material.color.setHSL((now * 0.15) % 1, 1, 0.55);
-  passGlow.material.color.setHSL(0.14, 1, 0.45 + 0.2 * Math.sin(now * 6));
-  passGlow.scale.setScalar(1 + 0.08 * Math.sin(now * 6));
 
   // Bruno in the hatch: chops away, or answers with a signal
   resetPose(chef);
