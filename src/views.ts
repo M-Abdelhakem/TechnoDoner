@@ -13,6 +13,9 @@ import { sfx, beat, siren, BPM, toggleMute, isMuted } from './audio';
 import { startCamera } from './camera';
 
 export const VW = 960, VH = 540;
+/** 'street' = Regulars (the window outside the club); 'club' = the same game inside the club (/technodoner) */
+export let THEME = 'street', BB = 1;
+export function setTheme(t: string) { THEME = t === 'club' ? 'club' : 'street'; BB = THEME === 'club' ? 2 : 1; }
 const LOW_W = 480, LOW_H = 270, LOWK = LOW_W / VW;
 
 export class View {
@@ -105,6 +108,18 @@ export class Cashier extends View {
     const s = this.scene, cam = this.camera; s.background = new THREE.Color(0x0a0812); s.fog = new THREE.Fog(0x0d0a16, 4, 17);
     cam.position.set(0, 1.76, 2.15); cam.lookAt(0, 1.42, -1);
     s.add(new THREE.HemisphereLight(0xb8c0ff, 0x201018, 0.55 * LI)); const d = new THREE.DirectionalLight(0xfff0dd, 0.5 * LI); d.position.set(0.5, 3, 3); s.add(d);
+    if (THEME === 'club') {
+    // inside the club: dance floor, DJ booth, lasers, the crowd
+    const fl = M(new THREE.PlaneGeometry(40, 40), lam(0xffffff, { map: getTex('clubfloor') }), 0, 0, -8); fl.rotation.x = -Math.PI / 2; s.add(fl);
+    s.add(M(GEO.box(30, 8, 0.2), lam(0x14081e), 0, 4, -14));
+    s.add(M(GEO.box(3.2, 1.1, 1), lam(0x1a1a1a), 0, 0.55, -11)); this.clubSign = M(GEO.box(3.25, 0.08, 1.05), basic(0xff00aa, { transparent: true }), 0, 1.1, -11); s.add(this.clubSign);
+    const dj = makeBear(0); dj.position.set(0, 0.35, -11.8); s.add(dj);
+    this.door = new THREE.PointLight(0xff00aa, 2 * LI, 14, 0); this.door.position.set(-3, 4.2, -7); s.add(this.door);
+    const l2 = new THREE.PointLight(0x00e5ff, 1.6 * LI, 14, 0); l2.position.set(3, 4.2, -8); s.add(l2);
+    this.lasers = [0x00ff9c, 0xff0066, 0x00ff9c, 0xff0066].map((c, i) => { const p = new THREE.Group(); p.position.set(-4 + i * 2.6, 5, -12); p.add(M(GEO.box(0.03, 0.03, 16), basic(c, { transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, fog: false }), 0, 0, 8)); s.add(p); return p; });
+    this.clubbers = []; for (let i = 0; i < 18; i++) { const f = makeFigure(new THREE.Color().setHSL(0.72 + Math.random() * 0.22, 0.5, 0.18 + Math.random() * 0.14)); f.position.set((Math.random() - 0.5) * 11, 0, -4 - Math.random() * 6); f.userData.ph = Math.random() * 6; s.add(f); this.clubbers.push(f); }
+    this.car = new THREE.Group(); this.car.userData = { light: { intensity: 0 }, bl: { material: { color: new THREE.Color() } } }; this.policeT = Infinity;
+    } else {
     const lamp = new THREE.PointLight(0xffb060, 2.2 * LI, 9, 0); lamp.position.set(-2.6, 3.1, -2.4); s.add(lamp);
     const g = M(new THREE.PlaneGeometry(40, 40), lam(0xffffff, { map: getTex('asphalt') }), 0, 0, -8); g.rotation.x = -Math.PI / 2; s.add(g);
     s.add(M(GEO.box(14, 0.12, 2), lam(0x4a4652), 0, 0.06, -1.6));
@@ -116,6 +131,7 @@ export class Cashier extends View {
     this.clubbers = []; for (let i = 0; i < 11; i++) { const f = makeFigure(new THREE.Color().setHSL(0.72 + Math.random() * 0.2, 0.45, 0.2 + Math.random() * 0.12)); f.position.set(-5.5 + i * 0.6, 0, -7.2 + (i % 2) * 0.3); f.userData.ph = Math.random() * 6; s.add(f); this.clubbers.push(f); }
     s.add(M(GEO.cyl(0.05, 0.06, 3.2, 6), lam(0x333338), -2.6, 1.6, -2.4)); s.add(M(GEO.sph(0.16, 6), basic(0xffd890), -2.6, 3.2, -2.4));
     this.car = makePoliceCar(); this.car.position.set(-20, 0, -4.4); s.add(this.car);
+    }
     // the kiosk window
     const wall = lam(0x2a1a2e), z = -0.32;
     s.add(M(GEO.box(4.4, 0.9, 0.12), wall, 0, 2.75, z)); s.add(M(GEO.box(0.6, 3.2, 0.12), wall, -2.0, 1.6, z));
@@ -184,12 +200,13 @@ export class Cashier extends View {
     this.policeT -= dt; if (this.policeT <= 0) { this.policeT = 35 + Math.random() * 25; this.police = 0; if (!this.headless) siren(4); }
     if (this.police >= 0) { this.police += dt; if (this.police > 6) this.police = -1; }
     const now = performance.now();
-    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: 1, role: 'cashier', ph: this.ph, t: Math.round(this.t * 10) / 10, sc: this.sc, sv: this.sv, lost: this.lost, rid: this.rid, took: this.took, pose: quant(this.sent), sg: [this.signId, this.mySign || ''], lv: this.lvId, urg: this.queue[0] ? urgency(this.queue[0].pat) : 0 }); }
+    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: BB, role: 'cashier', ph: this.ph, t: Math.round(this.t * 10) / 10, sc: this.sc, sv: this.sv, lost: this.lost, rid: this.rid, took: this.took, pose: quant(this.sent), sg: [this.signId, this.mySign || ''], lv: this.lvId, urg: this.queue[0] ? urgency(this.queue[0].pat) : 0 }); }
   }
   render(dt) {
     const T = this.clock, b = beat(), pulse = 1 - b.ph, beats = b.n;
     this.door.intensity = (0.6 + 2.2 * pulse) * LI; this.clubSign.material.opacity = 0.7 + 0.3 * pulse; this.neon.material.opacity = 0.8 + 0.2 * pulse;
     this.clubbers.forEach((f) => { f.position.y = Math.abs(Math.sin((T * Math.PI * BPM) / 60 + f.userData.ph)) * 0.1; });
+    this.lasers?.forEach((p, i) => { p.rotation.y = Math.sin(T * 0.7 + i) * 0.8; p.rotation.x = 0.3 + Math.sin(T * 0.5 + i * 2) * 0.3; });
     if (this.police >= 0) { this.car.position.x = -14 + this.police * 5; const on = Math.floor(T * 8) % 2; this.car.userData.light.intensity = on ? 3 * LI : 0; this.car.userData.bl.material.color.setHex(on ? 0x5080ff : 0x10204a); } else this.car.position.x = -30;
     // regulars
     const ids = new Set(this.queue.map((q) => q.id));
@@ -312,7 +329,7 @@ export class Chef extends View {
     } else this.shave = 0;
     if (play && this.holdId === 'board' && this.board && this.board === this.board.toUpperCase()) { this.boardP += dt / 0.9; if (Math.random() < dt * 9) sfx('chop'); if (this.boardP >= 1) { this.board = this.board.toLowerCase(); this.boardP = 0; sfx('pick'); } }
     const now = performance.now();
-    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: 1, role: 'chef', pass: this.pass, sg: [this.signId, this.mySign || ''] }); }
+    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: BB, role: 'chef', pass: this.pass, sg: [this.signId, this.mySign || ''] }); }
   }
   render(dt) {
     const P = this.P, b = beat(), T = this.clock;

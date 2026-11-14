@@ -3,7 +3,10 @@
 // end screen and the keys. Dev handles on window.__bb for tests and the lab capture.
 import { detectPlatform } from '@jommi/game-platform';
 import QRCode from 'qrcode';
-import { Cashier, Chef } from './views';
+import { Cashier, Chef, setTheme } from './views';
+// /technodoner is the same game inside the club: its own look, music not muffled, its own rooms and Quick play lobby
+const CLUB = document.body.dataset.theme === 'club'; setTheme(CLUB ? 'club' : 'street');
+const VER = CLUB ? 2 : 1, LOBBY = CLUB ? 'club' : 'main';
 import { BotChef, BotCashier } from './bots';
 import { loopPair, wsEndpoint, quickMatch, newCode } from './net';
 import { startMusic, stopMusic, initAudio, setIntensity, toggleMute, BPM } from './audio';
@@ -19,7 +22,7 @@ let level = 'normal'; try { level = localStorage.getItem('bb-level') || 'normal'
 const levelBtns = [...document.querySelectorAll('[data-level]')];
 const pickLevel = (l) => { level = l; levelBtns.forEach((b) => b.classList.toggle('on', b.dataset.level === l)); try { localStorage.setItem('bb-level', l); } catch {} };
 levelBtns.forEach((b) => (b.onclick = () => pickLevel(b.dataset.level))); pickLevel(level);
-const play = (bpm) => { startMusic({ bpm, muffled: true }); music = true; };
+const play = (bpm) => { startMusic({ bpm, muffled: !CLUB }); music = true; };
 
 function clearViews() { views.forEach((v) => { v.cam?.stop?.(); v.destroy?.(); }); stage.innerHTML = ''; botstage.innerHTML = ''; views = []; bots = []; cashier = null; }
 function show(id) { ['menu', 'wait', 'end'].forEach((x) => ($(x).hidden = x !== id)); }
@@ -33,14 +36,14 @@ function playtest(who) {
 }
 
 async function host(role, viaQuick = false) {
-  clearViews(); code = viaQuick || newCode(); ep = wsEndpoint(code, role); enter(role);
+  clearViews(); code = viaQuick || newCode(); ep = wsEndpoint(code, role, VER); enter(role);
 }
 function join(c) {
-  clearViews(); code = c.toUpperCase(); ep = wsEndpoint(code, null); mode = 'joining';
+  clearViews(); code = c.toUpperCase(); ep = wsEndpoint(code, null, VER); mode = 'joining';
   $('waitCode').textContent = code; $('waitMsg').textContent = 'Joining the kitchen…'; $('qrBox').hidden = true; $('openShop').hidden = true; show('wait');
   const t0 = Date.now(); clearInterval(joinWait);
   joinWait = setInterval(() => {
-    const h = ep.peers().find((d) => d.bb === 1 && d.role);
+    const h = ep.peers().find((d) => d.bb === VER && d.role);
     if (h) { clearInterval(joinWait); const r = h.role === 'cashier' ? 'chef' : 'cashier'; ep.setRole(r); enter(r); }
     else if (Date.now() - t0 > 30000) { clearInterval(joinWait); $('waitMsg').textContent = 'Nobody is in a kitchen with that code. Check it and try again.'; }
   }, 200);
@@ -56,12 +59,12 @@ function enter(role) {
 }
 async function quick() {
   const b = $('quickBtn'); b.disabled = true; b.textContent = 'Looking for a kitchen…';
-  const mine = newCode(); const r = await quickMatch(mine);
+  const mine = newCode(); const r = await quickMatch(mine, false, LOBBY);
   b.disabled = false; b.textContent = 'Quick play';
   if (r.join) join(r.join); else if (r.host) host('cashier', mine);
   else $('netNote').textContent = 'Could not reach the kitchen server. Try again, or playtest on this device.';
 }
-function leave() { stopMusic(); music = false; clearInterval(joinWait); ep?.close(); ep = null; if (code && mode === 'online') quickMatch(code, true); clearViews(); mode = null; code = null; show('menu'); }
+function leave() { stopMusic(); music = false; clearInterval(joinWait); ep?.close(); ep = null; if (code && mode === 'online') quickMatch(code, true, LOBBY); clearViews(); mode = null; code = null; show('menu'); }
 
 $('ptCashier').onclick = () => playtest('cashier'); $('ptChef').onclick = () => playtest('chef'); $('ptBoth').onclick = () => playtest('both');
 $('quickBtn').onclick = quick; $('hostCashier').onclick = () => host('cashier'); $('hostChef').onclick = () => host('chef');

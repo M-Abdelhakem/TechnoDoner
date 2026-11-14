@@ -3,6 +3,7 @@
 // through the wall in TechnoDöner · Regulars (low-passed) or open in TechnoDöner, at the difficulty's BPM, pushed to its peak in
 // the shift's last minute. Plus the street (sirens), the kitchen's sound effects, and a mute that is remembered.
 export let BPM = 120;
+const VOL = 1.0;
 let ac: AudioContext | null = null, master, bus, filter, noiseBuf, nextT = 0, step = 0, musicOn = false, t0 = 0, intensity = 0, muted = false;
 try { muted = localStorage.getItem('bb-muted') === '1'; } catch {}
 
@@ -10,7 +11,10 @@ export function initAudio() {
   if (ac) { ac.resume(); return; }
   try {
     ac = new (window.AudioContext || (window as any).webkitAudioContext)();
-    master = ac.createGain(); master.gain.value = muted ? 0 : 0.5; master.connect(ac.destination);
+    // loud, but glued by a compressor so the kick never clips
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 8; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.12;
+    const out = ac.createGain(); out.gain.value = 1.6; comp.connect(out); out.connect(ac.destination);
+    master = ac.createGain(); master.gain.value = muted ? 0 : VOL; master.connect(comp);
     filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 20000; filter.Q.value = 0.7; filter.connect(master);
     bus = ac.createGain(); bus.gain.value = 1; bus.connect(filter);
     noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.6, ac.sampleRate);
@@ -36,11 +40,11 @@ function sched() {
   while (nextT < ac.currentTime + 0.12) {
     const s = step % 16, t = nextT, bar = Math.floor(step / 16), sec = bar % 64, root = ROOTS[Math.floor(bar / 4) % 4];
     const peak = intensity > 0 || sec >= 48, intro = sec < 8 && !peak, brk = sec >= 32 && sec < 48 && !peak;
-    if (!brk || sec >= 46) { if (s % 4 === 0) osc('sine', 150, t, 0.32, 1.1, 40, bus); }
+    if (!brk || sec >= 46) { if (s % 4 === 0) { osc('sine', 150, t, 0.34, 1.4, 40, bus); noise(t, 0.012, 0.25, 'highpass', 3000, bus); } }
     if (s % 4 === 2) noise(t, peak ? 0.12 : 0.04, peak ? 0.12 : 0.08, 'highpass', 8000, bus);
     if (s % 2 === 1) noise(t, 0.025, 0.035, 'highpass', 9500, bus);
     if (!intro && !brk && (s === 4 || s === 12)) noise(t, 0.14, 0.22, 'bandpass', 1500, bus);
-    if (!intro && !brk && s % 4 !== 0) synth('sawtooth', root * (s % 4 === 3 ? 2 : 1), t, 0.13, 0.16, 900, 110);
+    if (!intro && !brk && s % 4 !== 0) synth('sawtooth', root * (s % 4 === 3 ? 2 : 1), t, 0.13, 0.26, 1100, 110);
     if (!intro && !brk && (s === 6 || s === 14) && bar % 2 === 1) CHORD.forEach((k) => synth('sawtooth', root * 4 * k, t, 0.16, 0.035, 2600, 500));
     if (brk || peak) { const n = ARP[s % 8]; synth('square', root * 8 * CHORD[n], t, 0.09, brk ? 0.025 : 0.03, brk ? 600 + (sec - 32) * 180 : 3000, 400); }
     if (brk && s === 0 && bar % 2 === 0) CHORD.forEach((k) => synth('sawtooth', root * 2 * k, t, spb * 30, 0.025, 700, 300));
@@ -52,14 +56,14 @@ function sched() {
 /** muffled: heard through the kebab shop wall; bpm from the difficulty */
 export function startMusic(opts: { bpm?: number; muffled?: boolean } = {}) {
   initAudio(); if (!ac) return;
-  BPM = opts.bpm || 120; filter.frequency.setValueAtTime(opts.muffled === false ? 20000 : 1100, ac.currentTime);
+  BPM = opts.bpm || 120; filter.frequency.setValueAtTime(opts.muffled === false ? 20000 : 2600, ac.currentTime);
   nextT = ac.currentTime + 0.05; step = 0; t0 = nextT; musicOn = true; intensity = 0;
 }
 export function stopMusic() { musicOn = false; }
 /** 0 normal, 1 = the shift's last minute: always the peak section, extra open hats */
 export function setIntensity(v: number) { intensity = v; }
 export function isMuted() { return muted; }
-export function toggleMute() { muted = !muted; try { localStorage.setItem('bb-muted', muted ? '1' : '0'); } catch {} if (master) master.gain.setTargetAtTime(muted ? 0 : 0.5, ac.currentTime, 0.05); return muted; }
+export function toggleMute() { muted = !muted; try { localStorage.setItem('bb-muted', muted ? '1' : '0'); } catch {} if (master) master.gain.setTargetAtTime(muted ? 0 : VOL, ac.currentTime, 0.05); return muted; }
 /** phase within the current beat (0..1) and the beat count, on the music clock when it runs */
 export function beat() { const s = ac ? ac.currentTime - t0 : performance.now() / 1000; const b = Math.max(0, s) * BPM / 60; return { ph: b % 1, n: Math.floor(b) }; }
 export function siren(sec = 3) {

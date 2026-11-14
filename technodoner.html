@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>TechnoDöner · Rule Book</title>
+<title>TechnoDöner · Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;800&display=swap">
 <style>
@@ -49,32 +49,32 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
 @media (max-width:620px){.roles{grid-template-columns:1fr}.card{padding:16px}}
 </style>
 </head>
-<body>
+<body data-theme="club">
 <div id="stage" class="one"></div>
 <div id="botstage" hidden></div>
-<div id="rotate">Turn your phone sideways for the club view</div>
+<div id="rotate">Turn your phone sideways for the kitchen view</div>
 <div class="ov" id="loading"><p class="tag">Heating the grill…</p></div>
 <div class="ov" id="menu" hidden><div class="card">
   <div class="row" style="justify-content:space-between;align-items:flex-start">
-    <div style="flex:1;min-width:240px"><h1>TechnoDöner<span style="display:block;font-size:.38em;color:#fbf1e4;text-shadow:none;margin-top:6px;letter-spacing:.08em">RULE BOOK</span></h1>
-    <p class="tag">A döner stand inside a Berlin techno club, too loud to talk. The rules come from <a href="https://github.com/m-abdelhakem/technodoner" style="color:#7fe0d4">TechnoDoner</a> by m-abdelhakem; the camera signing and the online kitchen come from TechnoDöner · Regulars.</p></div>
+    <div style="flex:1;min-width:240px"><h1>TechnoDöner<span style="display:block;font-size:.38em;color:#fbf1e4;text-shadow:none;margin-top:6px;letter-spacing:.08em">CLUB</span></h1>
+    <p class="tag">The döner stand inside the club, right by the dance floor. The music is so loud nobody can hear a word. The regulars order by dancing.</p></div>
     <div class="siteqr"><canvas id="siteQr" width="120" height="120"></canvas><span id="siteUrl" class="small"></span></div>
   </div>
   <div class="roles">
-    <div class="role"><h3 style="color:#7fe0d4">Bärbel · Cashier</h3><ul><li class="yes">Sees the customer and has the rule book</li><li class="yes">Signs each portion with her body (camera) or Q W E R T, then Serve! (A)</li><li class="no">Must turn to the kitchen to sign: then she can't see the customer or the book</li></ul></div>
-    <div class="role"><h3 style="color:#e3a36a">Bruno · Chef</h3><ul><li class="yes">Has the ingredients and serves</li><li class="yes">Answers with "got it" or "repeat that"</li><li class="no">Turns between the window and the table: he can't watch while he cooks</li><li class="no">Strobes black out the window</li></ul></div>
+    <div class="role"><h3 style="color:#7fe0d4">Bärbel · Cashier</h3><ul><li class="yes">Sees every regular dance at the window</li><li class="yes">Copies the dance with her body (camera) or keys 1–6</li><li class="no">New here: doesn't know anyone's order</li><li class="no">Can't cook</li></ul></div>
+    <div class="role"><h3 style="color:#e3a36a">Bruno · Chef</h3><ul><li class="yes">The owner. His book says which dance means which order</li><li class="yes">Cooks everything and passes it through the hatch</li><li class="no">Can't see the customers</li><li class="no">Only sees Bärbel dancing in the hatch</li></ul></div>
   </div>
   <h2>Difficulty</h2>
-  <div class="lvl" style="margin-bottom:14px"><button data-level="chill" class="alt">Chill · 3 rules, patient</button><button data-level="normal" class="alt">Normal · 6 rules</button><button data-level="rave" class="alt">Rave · 8 rules, fast, strobes</button></div>
+  <div class="lvl" style="margin-bottom:14px"><button data-level="chill" class="alt">Chill · 2-pose dances</button><button data-level="normal" class="alt">Normal · 3 poses</button><button data-level="rave" class="alt">Rave · 4 poses, fast</button></div>
   <h2>Playtest on this device</h2>
   <div class="row"><button id="ptCashier">Play Bärbel · bot Bruno</button><button id="ptChef">Play Bruno · bot Bärbel</button><button id="ptBoth" class="alt">Both seats side by side</button></div>
   <div class="sep"></div>
   <h2>Play on two devices</h2>
   <div class="row" style="margin-bottom:10px"><button id="quickBtn">Quick play</button><span class="small">Press it on both phones or laptops. You'll be matched.</span></div>
-  <div class="row"><button id="hostCashier" class="alt">Start as Bärbel</button><button id="hostChef" class="alt">Start as Bruno</button><input id="codeIn" maxlength="6" placeholder="CODE" aria-label="Kitchen code"><button id="joinBtn" class="alt">Join</button></div>
+  <div class="row"><button id="hostCashier" class="alt">Start a kitchen as Bärbel</button><button id="hostChef" class="alt">Start as Bruno</button><input id="codeIn" maxlength="6" placeholder="CODE" aria-label="Kitchen code"><button id="joinBtn" class="alt">Join</button></div>
   <p class="small" id="netNote"></p>
-  <p class="small">Bärbel: Space turns · Q Bread · W Meat · E Lettuce · R Tomato · T Onion · A Serve! · S Start over · D Hurry! · G take / give the döner · C camera (then hold your hand on the sill or the customer). M mutes. Bruno: Space (F side by side) turns · 1–5 ingredients (hold Meat on the spit) · Enter passes it to the window · Backspace start over · O got it · ? repeat that.</p>
-  <p class="small">Other versions: <a href="./" style="color:#ffb238">TechnoDöner · Regulars</a> · <a href="./original/" style="color:#ffb238">TechnoDöner · Original (1:1)</a></p>
+  <p class="small">Bärbel: keys 1–6 strike a pose, 7 is Hurry!, 0 rests, C turns the camera on (then hold your hand over the tray or the regular to take and serve). M mutes. Bruno: mouse or touch to cook, hold on the spit and the board.</p>
+  <p class="small">Other versions: <a href="./" style="color:#ffb238">TechnoDöner · Regulars (outside the club)</a> · <a href="./original/" style="color:#ffb238">TechnoDöner · Original (1:1)</a></p>
 </div></div>
 <div class="ov" id="wait" hidden><div class="card">
   <h2>Kitchen code</h2><div class="code" id="waitCode">----</div>
@@ -86,6 +86,6 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
   <h2 id="endT">Feierabend!</h2><p class="tag" id="endS"></p>
   <div class="row"><button id="again">Next shift</button><button id="leave2" class="alt">Menu</button></div>
 </div></div>
-<script type="module" src="./src/mix/main.ts"></script>
+<script type="module" src="./src/main.ts"></script>
 </body>
 </html>
