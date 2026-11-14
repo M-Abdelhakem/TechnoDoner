@@ -10,7 +10,7 @@
     "gemuese": { "name": "Gemüse", "items": ["bread", "lettuce", "tomato", "onion"] },
     "alles": { "name": "Mit Alles", "items": ["bread", "meat", "meat", "lettuce", "tomato", "onion"] }
   },
-  "_regulars": "dance: 3 poses (Chill uses the first 2), d4: 4 poses (Rave). U arms up, L point left, R point right, C clap, H hands on head, N lean. look: fur, shirt and hat/extra for the 3D bear and the book's face",
+  "_regulars": "dance: 3 poses (Chill uses the first 2), d4: 4 poses (Rave). U arms up, L point left, R point right, C flex (arms out, forearms up), H hands on head, N lean. look: fur, shirt and hat/extra for the 3D bear and the book's face",
   "regulars": [
     { "name": "Kalle", "dance": "UCU", "d4": "UCUH", "order": "klassik", "look": { "fur": "#8b5a2b", "shirt": "#151515", "hat": "beanie", "hatColor": "#e63946", "extra": "sunglasses", "emoji": "🧢" } },
     { "name": "Mia", "dance": "LRC", "d4": "LRCU", "order": "scharf", "look": { "fur": "#d9d2c5", "shirt": "#ff4fa8", "hat": "bucket", "hatColor": "#e0c341", "extra": "glitter", "emoji": "👒" } },

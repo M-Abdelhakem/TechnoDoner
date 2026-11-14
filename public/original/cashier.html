@@ -51,7 +51,7 @@
   <ol class="steps">
     <li>🐻 A <b>regular</b> steps up and dances their routine. You can't hear a thing, and you don't know what they eat.</li>
     <li>🕺 <b>Copy the dance</b> with your body (📷 camera) or the keys <span class="key">1</span>–<span class="key">6</span> (<span class="key">0</span> rest). The chef sees your bear in his window and looks the dance up in his book.</li>
-    <li>⌚ Running late? <span class="key">7</span> or tap your wrist: <b>Hurry!</b> The chef answers 🙌 "got it" or 🤷 "again".</li>
+    <li>⌚ Running late? <span class="key">7</span> or raise one arm and wave: <b>Hurry!</b> The chef answers 🙌 "got it" or 🤷 "again".</li>
     <li>🥙 The döner appears on the <b>pass</b> by the kitchen hatch. <b>Take it</b> (click it, or <span class="key">F</span>) and <b>give it to the regular</b> (click them, or <span class="key">F</span>). With the camera: hold your right paw on it for ½ s.</li>
   </ol>
   <p>⏱️ The ring over the regular is their patience: <b style="color:#ffea00">yellow</b> at 60 s, <b style="color:#ff7a30">orange</b> at 30 s, flashing <b style="color:#ff1744">red</b> at 10 s.</p>
@@ -171,7 +171,7 @@ function setPose(k) { poseKey = k; pad.querySelectorAll('button[data-pose]').for
 setPose('I');
 function updatePose(now, dt) {
   let target = cam.pose() || POSES[poseKey].v;
-  if (!cam.pose() && poseKey === 'W') { target = target.slice(); const w = Math.sin(now * 22) * 0.35; target[9] += w; target[10] -= Math.abs(w) * 0.5; } // tapping the wrist
+  if (!cam.pose() && poseKey === 'W') { target = target.slice(); const w = Math.sin(now * 9) * 0.45; target[6] += w; target[9] += w * 1.3; } // waving the raised arm
   const k = Math.min(1, dt * 14);
   for (let i = 0; i < 15; i++) sent[i] += (target[i] - sent[i]) * k;
   resetPose(me); applyPose(me, sent, 1);
@@ -204,14 +204,15 @@ const cam = createCamera({
   onState: (on) => pad.classList.toggle('cam', on),
   targets: () => {
     const out = [];
-    if (canTake()) { const p = proj(PASS_SPOT); if (p) out.push({ key: 'pass', ...p, r: 120, fire: take }); }
-    if (canGive()) { const p = proj(customerPoint()); if (p) out.push({ key: 'customer', ...p, r: 170, fire: give }); }
+    // zones outside the body, where the camera can see the hand: out to the right edge to take, above the head to give
+    if (canTake()) out.push({ key: 'pass', x: innerWidth * 0.9, y: innerHeight * 0.45, r: innerWidth * 0.12, fire: take });
+    if (canGive()) out.push({ key: 'customer', x: innerWidth / 2, y: innerHeight * 0.07, r: innerHeight * 0.17, fire: give });
     return out;
   },
 });
 function updateHandover() {
   let msg = '';
-  const pawHint = cam.on ? ', or hold your paw on it' : '';
+  const pawHint = cam.on ? (state && state.sill ? ', or hold your hand out to the right' : ', or lift your hand above your head') : '';
   if (state && state.phase === 'playing') {
     if (state.sill) msg = `🥙 Döner on the pass! Take it: click it (or F${pawHint})`;
     else if (state.carry && state.customer) msg = `🐻 Give it to ${state.customer.name}: click them (or F${pawHint})`;

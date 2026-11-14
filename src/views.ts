@@ -195,7 +195,7 @@ export class Cashier extends View {
       if (gone >= 0) { this.queue.splice(gone, 1); this.sc -= 5; this.lost++; const [x, y] = this.at(0, 1.8, -0.8); this.pop(x, y, '−€5', '#ff6060'); sfx('bad'); }
     }
     let target = (this.cam && this.cam.latest()) || POSES[this.poseKey].v;
-    if (!this.cam && this.poseKey === 'W') { target = target.slice(); const w = Math.sin(this.clock * 22) * 0.35; target[9] += w; target[10] -= Math.abs(w) * 0.5; } // tapping the wrist
+    if (!this.cam && this.poseKey === 'W') { target = target.slice(); const w = Math.sin(this.clock * 9) * 0.45; target[6] += w; target[9] += w * 1.3; } // waving the raised arm
     const k = Math.min(1, dt * 14); for (let i = 0; i < 15; i++) this.sent[i] += (target[i] - this.sent[i]) * k;
     this.policeT -= dt; if (this.policeT <= 0) { this.policeT = 35 + Math.random() * 25; this.police = 0; if (!this.headless) siren(4); }
     if (this.police >= 0) { this.police += dt; if (this.police > 6) this.police = -1; }
@@ -250,7 +250,7 @@ export class Cashier extends View {
     if (this.held && cu) this.label(ACTIVE[0], 0.98, ACTIVE[2] + 0.5, 'TAP THE REGULAR TO SERVE', '#7dff9a', 11);
     this.hud(this.t, this.sc, VW - 16, 46); c.textAlign = 'right'; c.font = '10px Bungee, sans-serif'; c.fillStyle = '#bba9c8'; c.fillText(`SHIFT · ${this.L.name.toUpperCase()}`, VW - 16, 14);
     // camera hand: hold it over the tray to take, over the regular to serve
-    if (this.cam) { const tg = []; if (this.tray && !this.held) { const [tx, ty] = this.at(1.55, 1.05, 0.05); tg.push({ id: 'tray', x: tx - 80, y: ty - 60, w: 160, h: 110 }); } if (this.held && cu) { const [qx, qy] = this.at(ACTIVE[0], ACTIVE[1], ACTIVE[2]); tg.push({ id: 'cu', x: qx - 110, y: qy - 110, w: 220, h: 240 }); } this.handTargets(dt, this.cam, tg); tg.forEach((q) => { c.strokeStyle = '#7dff9a88'; c.setLineDash([8, 6]); c.lineWidth = 3; rr(c, q.x, q.y, q.w, q.h, 14); c.stroke(); c.setLineDash([]); }); } else this.handXY = null;
+    if (this.cam) { const tg = []; if (this.tray && !this.held) tg.push({ id: 'tray', x: VW * 0.8, y: 120, w: VW * 0.2, h: 330, label: 'TAKE: hand out to the side →' }); if (this.held && cu) tg.push({ id: 'cu', x: 230, y: 0, w: 500, h: 105, label: '↑ GIVE: lift it above your head' }); this.handTargets(dt, this.cam, tg); tg.forEach((q) => { c.strokeStyle = '#7dff9a88'; c.setLineDash([8, 6]); c.lineWidth = 3; rr(c, q.x, q.y, q.w, q.h, 14); c.stroke(); c.setLineDash([]); c.fillStyle = '#7dff9a'; c.font = '13px Bungee, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#000c'; c.strokeText(q.label, q.x + q.w / 2, q.y + q.h / 2); c.fillText(q.label, q.x + q.w / 2, q.y + q.h / 2); }); } else this.handXY = null;
     // self view frame
     c.strokeStyle = '#ffcf5a'; c.lineWidth = 3; rr(c, 8, 312, 200, 150, 8); c.stroke(); c.fillStyle = '#000b'; rr(c, 8, 292, 200, 22, 6); c.fill(); c.fillStyle = '#ffcf5a'; c.font = '10px Bungee, sans-serif'; c.textAlign = 'center'; c.fillText('WHAT BRUNO SEES', 108, 307);
     if (this.camMsg) { c.fillStyle = '#000c'; rr(c, 220, 400, 520, 30, 8); c.fill(); c.fillStyle = '#fff'; c.font = '13px Archivo, sans-serif'; c.fillText(this.camMsg, 480, 420); }
@@ -259,7 +259,7 @@ export class Cashier extends View {
     this.button('pzI', 12 + 6 * 70, 476, 64, 58, !this.cam && this.poseKey === 'I'); drawPoseIcon(c, 'I', 12 + 6 * 70 + 32, 498, 0.8); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.fillText('0 Rest', 12 + 6 * 70 + 32, 530);
     this.button('pzW', 12 + 7 * 70, 476, 64, 58, !this.cam && this.poseKey === 'W'); drawPoseIcon(c, 'W', 12 + 7 * 70 + 32, 498, 0.8); c.fillStyle = '#ffcf5a'; c.font = '10px Archivo, sans-serif'; c.fillText('7 Hurry!', 12 + 7 * 70 + 32, 530);
     this.button('cam', 580, 476, 130, 58, !!this.cam); c.fillStyle = '#fff'; c.font = '12px Bungee, sans-serif'; c.fillText(this.cam ? 'CAMERA ON' : 'USE CAMERA', 645, 503); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.fillText(this.cam ? 'hand: take & serve' : 'copy with your body', 645, 520);
-    c.textAlign = 'left'; c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('Copy the regular\'s dance.', 722, 496); c.fillText('Tap your wrist: hurry!', 722, 514);
+    c.textAlign = 'left'; c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('Copy the regular\'s dance.', 722, 496); c.fillText('One arm up, waving: hurry!', 722, 514);
     if (this.ph === 'play' && this.sv === 0 && this.t > 165) { c.textAlign = 'center'; c.fillStyle = '#000c'; rr(c, 230, 220, 500, 64, 12); c.fill(); c.fillStyle = '#fff'; c.font = '15px Archivo, sans-serif'; c.fillText('You can\'t hear a thing. Copy each regular\'s dance (camera or 1–6).', 480, 245); c.fillText('Bruno knows what they always order. Serve what he passes you.', 480, 268); }
     this.finish(dt);
   }
@@ -352,7 +352,7 @@ export class Chef extends View {
     this.label(HX, 2.3, -1.0, 'BÄRBEL', '#ffb238', 12);
     // the book
     c.fillStyle = '#efe2c4'; c.fillRect(0, 0, 250, 470); c.fillStyle = '#d9c9a6'; c.fillRect(244, 0, 6, 470);
-    c.fillStyle = '#5a2a14'; c.font = '15px Bungee, sans-serif'; c.textAlign = 'left'; c.fillText('STAMMKUNDEN', 14, 26); c.font = '10px Archivo, sans-serif'; c.fillStyle = '#7a5a40'; c.fillText(`Bruno's book · ${lv(P?.lv).name} · tapping wrist = hurry!`, 14, 40);
+    c.fillStyle = '#5a2a14'; c.font = '15px Bungee, sans-serif'; c.textAlign = 'left'; c.fillText('STAMMKUNDEN', 14, 26); c.font = '10px Archivo, sans-serif'; c.fillStyle = '#7a5a40'; c.fillText(`Bruno's book · ${lv(P?.lv).name} · one arm waving = hurry!`, 14, 40);
     const dl = lv(P?.lv).danceLen;
     REGULARS.forEach((R, i) => {
       const y = 50 + i * 52; c.fillStyle = i % 2 ? '#e8d8b6' : '#f3e9d2'; c.fillRect(6, y, 236, 50);
