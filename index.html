@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Berlin Bears</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;800&display=swap">
+<style>
+[hidden]{display:none!important}
+:root{--bg:#130c1a;--panel:#21162b;--line:#3d2b4d;--fg:#fbf1e4;--muted:#bba9c8;--amber:#ffb238;--teal:#22b0a2;color-scheme:dark}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Archivo,system-ui,sans-serif;overflow:hidden;touch-action:none}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;gap:8px}
+#stage .view{position:relative;aspect-ratio:16/9;background:#000;touch-action:none;overflow:hidden}
+#stage .view canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#stage .view .gl{image-rendering:pixelated}
+#stage .view .ui{cursor:none;touch-action:none}
+#stage .view::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+#stage.one .view{width:min(100vw,177.7vh)}
+#stage.two{flex-wrap:wrap}
+#stage.two .view{width:min(49.5vw,88vh)}
+.camthumb{position:absolute;left:23%;bottom:15%;width:13%;transform:scaleX(-1);border:2px solid var(--amber);border-radius:6px;opacity:.85;pointer-events:none}
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(12,6,18,.82);overflow:auto}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:22px 24px;max-width:780px;width:100%;box-shadow:0 24px 70px #000b;margin:auto}
+h1{font-family:Bungee,Impact,sans-serif;font-weight:400;font-size:clamp(34px,7vw,62px);margin:0;line-height:1;color:var(--amber);text-shadow:0 0 22px #ff9a2a77,3px 3px 0 #b3261e}
+h2{font-family:Bungee,Impact,sans-serif;font-weight:400;font-size:18px;margin:0 0 10px;color:var(--amber)}
+p{line-height:1.5}
+.tag{color:var(--muted);margin:10px 0 16px;font-size:16px;max-width:62ch}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.role{border-radius:14px;padding:14px;background:#2c1f39;border:2px solid var(--line)}
+.role h3{font-family:Bungee,sans-serif;font-weight:400;margin:0 0 6px;font-size:17px}
+.role ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.45}
+.no{color:#ff8d8d}.yes{color:#8dffb0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font:800 15px Archivo,sans-serif;padding:12px 16px;border-radius:12px;border:0;background:var(--amber);color:#1a1020;cursor:pointer}
+button.alt{background:#3a2a4a;color:var(--fg)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:#150d1d;color:var(--fg);width:7ch;text-transform:uppercase;letter-spacing:.15em}
+.code{font-family:Bungee,sans-serif;font-size:56px;letter-spacing:.1em;color:#fff;margin:6px 0}
+.small{font-size:13px;color:var(--muted)}
+.sep{height:1px;background:var(--line);margin:16px 0}
+#qr{background:#fff;border-radius:10px}
+@media (max-width:620px){.roles{grid-template-columns:1fr}.card{padding:16px}}
+</style>
+</head>
+<body>
+<div id="stage" class="one"></div>
+<div id="botstage" hidden></div>
+<div class="ov" id="loading"><p class="tag">Heating the grill…</p></div>
+<div class="ov" id="menu" hidden><div class="card">
+  <h1>Berlin Bears</h1>
+  <p class="tag">A döner window outside a techno club. Bass through the walls, sirens on the street, and nobody can hear a word. The regulars order by dancing.</p>
+  <div class="roles">
+    <div class="role"><h3 style="color:#7fe0d4">Bärbel · Cashier</h3><ul><li class="yes">Sees every regular dance at the window</li><li class="yes">Copies the dance with her body (camera) or keys 1–6</li><li class="no">New here: doesn't know anyone's order</li><li class="no">Can't cook</li></ul></div>
+    <div class="role"><h3 style="color:#e3a36a">Bruno · Chef</h3><ul><li class="yes">The owner. His book says which dance means which order</li><li class="yes">Cooks everything and passes it through the hatch</li><li class="no">Can't see the customers</li><li class="no">Only sees Bärbel dancing in the hatch</li></ul></div>
+  </div>
+  <h2>Playtest on this device</h2>
+  <div class="row"><button id="ptCashier">Play Bärbel · bot Bruno</button><button id="ptChef">Play Bruno · bot Bärbel</button><button id="ptBoth" class="alt">Both seats side by side</button></div>
+  <div class="sep"></div>
+  <h2>Play on two devices</h2>
+  <div class="row" style="margin-bottom:10px"><button id="quickBtn">Quick play</button><span class="small">Press it on both phones or laptops. You'll be matched.</span></div>
+  <div class="row"><button id="hostCashier" class="alt">Start a kitchen as Bärbel</button><button id="hostChef" class="alt">Start as Bruno</button><input id="codeIn" maxlength="6" placeholder="CODE" aria-label="Kitchen code"><button id="joinBtn" class="alt">Join</button></div>
+  <p class="small" id="netNote"></p>
+  <p class="small">Bärbel: keys 1–6 strike a pose, 0 rests, C turns the camera on. Bruno: mouse or touch to cook, hold on the spit and the board.</p>
+</div></div>
+<div class="ov" id="wait" hidden><div class="card">
+  <h2>Kitchen code</h2><div class="code" id="waitCode">----</div>
+  <p id="waitMsg" class="tag">Waiting for your partner…</p>
+  <div id="qrBox" class="row" style="align-items:flex-start;margin-bottom:14px"><canvas id="qr" width="150" height="150"></canvas><div style="flex:1;min-width:200px"><p class="small" style="margin-top:0">Scan with the other phone, or send this link. It opens straight into this kitchen.</p><p id="joinLink" style="word-break:break-all;font-size:13px;user-select:all"></p><button id="copyLink" class="alt">Copy link</button></div></div>
+  <div class="row"><button id="openShop" hidden>Open the window</button><button id="leave1" class="alt">Leave</button></div>
+</div></div>
+<div class="ov" id="end" hidden><div class="card">
+  <h2 id="endT">Feierabend!</h2><p class="tag" id="endS"></p>
+  <div class="row"><button id="again">Next shift</button><button id="leave2" class="alt">Menu</button></div>
+</div></div>
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>
