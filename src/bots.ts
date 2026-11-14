@@ -3,7 +3,8 @@
 // BotChef reads the cashier bear's pose stream exactly as a player would see it (nearest named pose, held a moment),
 // matches the last three against the book, then cooks that regular's usual.
 // BotCashier copies the regular's dance on the beat and serves whatever comes through the hatch.
-import { classify, REGULARS, RECIPES, danceAt, POSES } from './poses';
+import { classify, REGULARS, RECIPES, danceAt, danceFor, POSES } from './poses';
+import { lv } from './levels';
 import { beat } from './audio';
 
 export class BotChef {
@@ -13,10 +14,11 @@ export class BotChef {
     if (P.pose) {
       const c = classify(P.pose); const k = c.d < 0.9 ? c.key : '?';
       if (k === this.cur) this.held += dt; else { this.cur = k; this.held = 0; }
-      if (this.held > 0.3 && k !== '?' && k !== this.last) {
+      const L = lv(P.lv);
+      if (this.held > Math.min(0.3, (60 / L.bpm) * L.beatsPerPose * 0.6) && k !== '?' && k !== 'W' && k !== 'X' && k !== this.last) {
         this.last = k;
-        if (k === 'I') this.seq = ''; else this.seq = (this.seq + k).slice(-3);
-        const reg = REGULARS.findIndex((R) => R.dance === this.seq);
+        if (k === 'I') this.seq = ''; else this.seq = (this.seq + k).slice(-L.danceLen);
+        const reg = REGULARS.findIndex((R) => danceFor(R, L.danceLen) === this.seq);
         if (reg >= 0) {
           if (P.sv !== this.busySv || this.busy !== reg || this.busyT > 25) {
             if (!this.q.length && !ch.pass && !ch.plate) {
@@ -44,7 +46,7 @@ export class BotCashier {
   tick(dt) {
     const ca = this.ca; if (ca.ph !== 'play') return;
     const cu = ca.queue[0];
-    ca.setPose(cu ? danceAt(REGULARS[cu.reg].dance, beat().n) : 'I', true);
+    ca.setPose(cu ? danceAt(ca.danceOf(cu), beat().n, ca.L.beatsPerPose) : 'I', true);
     this.t -= dt; if (this.t > 0) return;
     if (ca.tray && !ca.held) { ca.click('tray'); this.t = 0.8; return; }
     if (ca.held && cu) { ca.serve(); this.t = 1; }

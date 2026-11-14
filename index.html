@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Berlin Bears</title>
+<title>TechnoDöner · Regulars</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Archivo:wght@400;600;800&display=swap">
 <style>
@@ -41,6 +41,9 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
 .small{font-size:13px;color:var(--muted)}
 .sep{height:1px;background:var(--line);margin:16px 0}
 #qr{background:#fff;border-radius:10px}
+.lvl{display:flex;gap:6px;flex-wrap:wrap}.lvl button{padding:8px 12px;font-size:14px}.lvl button.on{outline:3px solid var(--amber);background:#5a3a1a;color:#fff}
+#rotate{display:none}
+@media (orientation:portrait) and (max-width:700px){#stage:not(:empty)~#rotate{display:flex;position:fixed;inset:auto 0 0 0;padding:10px 16px;background:#000d;color:#ffcf5a;font:800 14px Archivo,sans-serif;justify-content:center;z-index:5}}
 .siteqr{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:140px;text-align:center;word-break:break-all}
 .siteqr canvas{background:#fff;border-radius:8px}
 @media (max-width:620px){.roles{grid-template-columns:1fr}.card{padding:16px}}
@@ -49,10 +52,11 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
 <body>
 <div id="stage" class="one"></div>
 <div id="botstage" hidden></div>
+<div id="rotate">Turn your phone sideways for the kitchen view</div>
 <div class="ov" id="loading"><p class="tag">Heating the grill…</p></div>
 <div class="ov" id="menu" hidden><div class="card">
   <div class="row" style="justify-content:space-between;align-items:flex-start">
-    <div style="flex:1;min-width:240px"><h1>Berlin Bears</h1>
+    <div style="flex:1;min-width:240px"><h1>TechnoDöner<span style="display:block;font-size:.38em;color:#fbf1e4;text-shadow:none;margin-top:6px;letter-spacing:.08em">REGULARS</span></h1>
     <p class="tag">A döner window outside a techno club. Bass through the walls, sirens on the street, and nobody can hear a word. The regulars order by dancing.</p></div>
     <div class="siteqr"><canvas id="siteQr" width="120" height="120"></canvas><span id="siteUrl" class="small"></span></div>
   </div>
@@ -60,6 +64,8 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
     <div class="role"><h3 style="color:#7fe0d4">Bärbel · Cashier</h3><ul><li class="yes">Sees every regular dance at the window</li><li class="yes">Copies the dance with her body (camera) or keys 1–6</li><li class="no">New here: doesn't know anyone's order</li><li class="no">Can't cook</li></ul></div>
     <div class="role"><h3 style="color:#e3a36a">Bruno · Chef</h3><ul><li class="yes">The owner. His book says which dance means which order</li><li class="yes">Cooks everything and passes it through the hatch</li><li class="no">Can't see the customers</li><li class="no">Only sees Bärbel dancing in the hatch</li></ul></div>
   </div>
+  <h2>Difficulty</h2>
+  <div class="lvl" style="margin-bottom:14px"><button data-level="chill" class="alt">Chill · 2-pose dances</button><button data-level="normal" class="alt">Normal · 3 poses</button><button data-level="rave" class="alt">Rave · 4 poses, fast</button></div>
   <h2>Playtest on this device</h2>
   <div class="row"><button id="ptCashier">Play Bärbel · bot Bruno</button><button id="ptChef">Play Bruno · bot Bärbel</button><button id="ptBoth" class="alt">Both seats side by side</button></div>
   <div class="sep"></div>
@@ -67,8 +73,8 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
   <div class="row" style="margin-bottom:10px"><button id="quickBtn">Quick play</button><span class="small">Press it on both phones or laptops. You'll be matched.</span></div>
   <div class="row"><button id="hostCashier" class="alt">Start a kitchen as Bärbel</button><button id="hostChef" class="alt">Start as Bruno</button><input id="codeIn" maxlength="6" placeholder="CODE" aria-label="Kitchen code"><button id="joinBtn" class="alt">Join</button></div>
   <p class="small" id="netNote"></p>
-  <p class="small">Bärbel: keys 1–6 strike a pose, 0 rests, C turns the camera on. Bruno: mouse or touch to cook, hold on the spit and the board.</p>
-  <p class="small">Other versions: <a href="./technodoner" style="color:#ffb238">TechnoDöner (this game + TechnoDoner's rule book)</a> · <a href="./original/" style="color:#ffb238">TechnoDoner (the original, 1:1)</a></p>
+  <p class="small">Bärbel: keys 1–6 strike a pose, 7 is Hurry!, 0 rests, C turns the camera on (then hold your hand over the tray or the regular to take and serve). M mutes. Bruno: mouse or touch to cook, hold on the spit and the board.</p>
+  <p class="small">Other versions: <a href="./technodoner" style="color:#ffb238">TechnoDöner · Rule Book</a> · <a href="./original/" style="color:#ffb238">TechnoDöner · Original (1:1)</a></p>
 </div></div>
 <div class="ov" id="wait" hidden><div class="card">
   <h2>Kitchen code</h2><div class="code" id="waitCode">----</div>

@@ -1,4 +1,4 @@
-# Berlin Bears: design
+# TechnoDöner · Regulars: design
 
 ## Pitch
 A döner window just outside a Berlin techno club. Bass through the walls, sirens and police on the street: nobody can

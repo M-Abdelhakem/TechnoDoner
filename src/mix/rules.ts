@@ -14,10 +14,14 @@ export const RULES = [
   { trait: 'wristband', remove: ['l'], text: 'Red wristband → NO Lettuce' },
   { trait: 'drunk', add: ['D'], text: 'Swaying (drunk) → +1 Bread' },
   { trait: 'neon', add: ['o'], text: 'Neon outfit → +1 Onion' },
+  // Rave only
+  { trait: 'furCoat', add: ['t'], text: 'Fur coat → +1 Tomato' },
+  { trait: 'earring', remove: ['m'], text: 'Gold earring → NO Meat' },
 ];
-const CHANCE = { sunglasses: 0.45, glitter: 0.4, drunk: 0.35, wristband: 0.5, bucketHat: 0.35, neon: 0.25 };
+const CHANCE = { sunglasses: 0.45, glitter: 0.4, drunk: 0.35, wristband: 0.5, bucketHat: 0.35, neon: 0.25, furCoat: 0.3, earring: 0.35 };
 
-export function rollTraits(rand = Math.random) { const t = {}; for (const k in CHANCE) t[k] = rand() < CHANCE[k]; return t; }
+/** n = how many rules the difficulty uses (Chill 3, Normal 6, Rave 8): only their traits appear */
+export function rollTraits(n = 6, rand = Math.random) { const t = {}; RULES.slice(0, n).forEach((r) => (t[r.trait] = rand() < CHANCE[r.trait])); return t; }
 export function expected(traits) {
   let list = [...BASE]; const applied = [];
   RULES.forEach((r, i) => {
@@ -40,6 +44,7 @@ export const SIGNS = [
   { id: 'o', pose: 'E', key: 'T', label: 'Onion', hint: 'rub your eyes, crying' },
   { id: 'serve', pose: 'R', key: 'A', label: 'Serve!', hint: 'point to the side' },
   { id: 'over', pose: 'L', key: 'S', label: 'Start over', hint: 'point the other way' },
+  { id: 'hurry', pose: 'W', key: 'D', label: 'Hurry!', hint: 'tap your wrist like a watch' },
 ];
 export const SIGN_BY_POSE = Object.fromEntries(SIGNS.map((s) => [s.pose, s]));
 export const SIGN_SECONDS = 1.3, REST_SECONDS = 0.4;

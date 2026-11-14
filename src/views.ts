@@ -7,8 +7,9 @@
 import * as THREE from 'three';
 import { LI, lam, basic, M, GEO, getTex, makeItem, makeBear, makeCustomer, makeFigure, makePoliceCar, makePlacard, setPlacard, applyPose } from './kit3d';
 import { rr, circ, bar, paw, drawItem, drawSignIcon, drawPoseIcon, drawFace, NAMES, ORD } from './draw2d';
-import { POSES, POSE_KEYS, REGULARS, RECIPES, danceAt, quant, BEATS_PER_POSE } from './poses';
-import { sfx, beat, siren, BPM } from './audio';
+import { POSES, POSE_KEYS, REGULARS, RECIPES, danceAt, danceFor, quant } from './poses';
+import { lv, urgency, URGENCY_TEXT, URGENCY_COL } from './levels';
+import { sfx, beat, siren, BPM, toggleMute, isMuted } from './audio';
 import { startCamera } from './camera';
 
 export const VW = 960, VH = 540;
@@ -27,7 +28,7 @@ export class View {
     const pos = (e) => { const r = this.cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * VW, ((e.clientY - r.top) / r.height) * VH]; };
     this.cv.addEventListener('pointermove', (e) => { [this.mx, this.my] = pos(e); });
     this.cv.addEventListener('pointerleave', () => { this.mx = this.my = -99; this.holdId = null; });
-    this.cv.addEventListener('pointerdown', (e) => { [this.mx, this.my] = pos(e); this.cv.setPointerCapture(e.pointerId); const h = this.hitAt(this.mx, this.my); if (!h) return; if (h.hold) this.holdId = h.id; else this.click(h.id); });
+    this.cv.addEventListener('pointerdown', (e) => { [this.mx, this.my] = pos(e); this.cv.setPointerCapture(e.pointerId); const h = this.hitAt(this.mx, this.my); if (!h) return; if (h.id === 'mute') { toggleMute(); return; } if (h.hold) this.holdId = h.id; else this.click(h.id); });
     addEventListener('pointerup', () => { this.holdId = null; });
     this.build(); this.resize();
   }
@@ -43,6 +44,17 @@ export class View {
     let o = hit.object; while (o && o.userData.pid === undefined) o = o.parent; if (!o) return null;
     return { id: o.userData.pid, hold: this.isHold(o.userData.pid) };
   }
+  /** camera hand over one of the targets [{id, x, y, w, h}] for 0.5 s acts as a click */
+  handTargets(dt, cam, targets) {
+    const h = cam && cam.hand && cam.hand(); if (!h) { this.handXY = null; this.handHold = 0; this.handOn = null; return; }
+    const x = h.x * VW, y = h.y * VH; this.handXY = [x, y];
+    const t = targets.find((q) => x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h);
+    if (!t) { this.handHold = 0; this.handOn = null; return; }
+    if (this.handOn !== t.id) { this.handOn = t.id; this.handHold = 0; }
+    this.handHold += dt; if (this.handHold >= 0.5) { this.handHold = -0.6; this.click(t.id); }
+  }
+  /** someone bangs on the counter: a short shake of the camera */
+  rattle(dt) { if (this.shakeT > 0) { this.shakeT -= dt; const k = this.shakeT * 0.05; this.camera.position.x += (Math.random() - 0.5) * k; this.camera.position.y += (Math.random() - 0.5) * k; } }
   isHold(id) { return false; }
   relevant(id) { return true; }
   hit(id, x, y, w, h, hold?) { this.hits.push({ id, x, y, w, h, hold }); }
@@ -67,6 +79,11 @@ export class View {
     const c = this.c;
     this.pops.forEach((p) => { p.t += dt; c.globalAlpha = Math.max(0, 1 - p.t / 1.4); c.fillStyle = p.col; c.font = '26px Bungee, sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000a'; c.strokeText(p.txt, p.x, p.y - p.t * 40); c.fillText(p.txt, p.x, p.y - p.t * 40); c.globalAlpha = 1; });
     this.pops = this.pops.filter((p) => p.t < 1.4);
+    // mute, on every screen (M too)
+    this.hit('mute', 8, 8, 40, 32); c.fillStyle = this.hover === 'mute' ? '#4a3660' : '#000a'; rr(c, 8, 8, 40, 32, 8); c.fill();
+    c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.textAlign = 'center'; c.fillText(isMuted() ? '🔇' : '🔊', 28, 30);
+    // the camera hand: a big paw with a fill ring while it holds over a target
+    if (this.handXY) { const [hx, hy] = this.handXY; paw(c, hx, hy, 20, this.kind ? '#efe6d2' : '#8b5a33'); if (this.handHold > 0) { c.strokeStyle = '#7dff9a'; c.lineWidth = 6; c.beginPath(); c.arc(hx, hy, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, this.handHold / 0.5)); c.stroke(); } }
     if (this.mx > -50) paw(c, this.mx + 6, this.my + 10, 12, this.kind ? '#efe6d2' : '#8b5a33', -0.4);
   }
   label(x, y, z, txt, col = '#fff', size = 11) { const [sx, sy] = this.proj(x, y, z); const c = this.c; c.font = size + 'px Bungee, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#000c'; c.strokeText(txt, sx, sy); c.fillStyle = col; c.fillText(txt, sx, sy); }
@@ -81,7 +98,7 @@ const ACTIVE = [0, 1.42, -0.8], QPOS = [[-1.05, 1.32, -1.9], [0.95, 1.3, -2.7]];
 export class Cashier extends View {
   constructor(stage, ep) {
     super(stage); this.kind = 1; this.ep = ep;
-    Object.assign(this, { ph: 'wait', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, took: 0, rid: 0, clock: 0, cid: 0, spawnT: 2, lastSend: 0, poseKey: 'I', cam: null, camMsg: '', recent: [], policeT: 25, police: -1 });
+    Object.assign(this, { ph: 'wait', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, took: 0, rid: 0, clock: 0, cid: 0, spawnT: 2, lastSend: 0, poseKey: 'I', cam: null, camMsg: '', recent: [], policeT: 25, police: -1, lvId: 'normal', L: lv('normal') });
     this.sent = POSES.I.v.slice(); this.models = new Map();
   }
   build() {
@@ -121,12 +138,13 @@ export class Cashier extends View {
   }
   extra3d() { const r = this.renderer; const x = Math.round(8 * LOWK), w = Math.round(200 * LOWK), h = Math.round(150 * LOWK), y = Math.round((VH - 462) * LOWK); r.setViewport(x, y, w, h); r.setScissor(x, y, w, h); r.render(this.self, this.selfCam); }
   relevant(id) { if (id === 'tray') return !!this.tray && !this.held; if (id === 'cu') return !!(this.held && this.queue[0]); return true; }
-  start() { this.rid++; Object.assign(this, { ph: 'play', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, spawnT: 1, cid: 0, pops: [] }); }
+  start(level = this.lvId) { this.rid++; this.lvId = level; this.L = lv(level); Object.assign(this, { ph: 'play', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, spawnT: 1, cid: 0, pops: [] }); }
+  danceOf(cu) { return danceFor(REGULARS[cu.reg], this.L.danceLen); }
   spawn() {
-    if (this.queue.length >= 3) return;
+    if (this.queue.length >= this.L.queue) return;
     let r; do { r = Math.floor(Math.random() * REGULARS.length); } while (this.recent.includes(r) || this.queue.some((q) => q.reg === r));
     this.recent = [r, ...this.recent].slice(0, 3);
-    this.queue.push({ id: ++this.cid, reg: r, pat: 95, max: 95, flash: 0 }); sfx('newc');
+    this.queue.push({ id: ++this.cid, reg: r, pat: this.L.patience, max: this.L.patience, flash: 0, urg: 0 }); sfx('newc');
   }
   setPose(k, quiet = false) { if (this.poseKey !== k && !quiet) sfx('pose'); this.poseKey = k; }
   async toggleCamera() {
@@ -154,17 +172,19 @@ export class Cashier extends View {
     this.tray = P && P.pass && P.pass[0] > this.took ? P.pass : null;
     if (this.ph === 'play') {
       this.t -= dt; if (this.t <= 0) { this.t = 0; this.ph = 'end'; sfx('bell'); }
-      this.spawnT -= dt; if (this.spawnT <= 0) { this.spawn(); this.spawnT = 16 + Math.random() * 6; }
+      this.spawnT -= dt; if (this.spawnT <= 0) { this.spawn(); this.spawnT = this.L.spawn + Math.random() * 6; }
       this.queue.forEach((cu, i) => { cu.pat -= dt * (i === 0 ? 1 : 0.35); cu.flash = Math.max(0, cu.flash - dt); });
+      const a = this.queue[0]; if (a) { const u = urgency(a.pat); if (u > a.urg) { a.urg = u; sfx('tick'); const [x, y] = this.at(ACTIVE[0], ACTIVE[1] + 0.9, ACTIVE[2]); this.pop(x, y, URGENCY_TEXT[u], URGENCY_COL[u]); } }
       const gone = this.queue.findIndex((cu) => cu.pat <= 0);
       if (gone >= 0) { this.queue.splice(gone, 1); this.sc -= 5; this.lost++; const [x, y] = this.at(0, 1.8, -0.8); this.pop(x, y, '−€5', '#ff6060'); sfx('bad'); }
     }
-    const target = (this.cam && this.cam.latest()) || POSES[this.poseKey].v;
+    let target = (this.cam && this.cam.latest()) || POSES[this.poseKey].v;
+    if (!this.cam && this.poseKey === 'W') { target = target.slice(); const w = Math.sin(this.clock * 22) * 0.35; target[9] += w; target[10] -= Math.abs(w) * 0.5; } // tapping the wrist
     const k = Math.min(1, dt * 14); for (let i = 0; i < 15; i++) this.sent[i] += (target[i] - this.sent[i]) * k;
     this.policeT -= dt; if (this.policeT <= 0) { this.policeT = 35 + Math.random() * 25; this.police = 0; if (!this.headless) siren(4); }
     if (this.police >= 0) { this.police += dt; if (this.police > 6) this.police = -1; }
     const now = performance.now();
-    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: 1, role: 'cashier', ph: this.ph, t: Math.round(this.t * 10) / 10, sc: this.sc, sv: this.sv, lost: this.lost, rid: this.rid, took: this.took, pose: quant(this.sent), sg: [this.signId, this.mySign || ''] }); }
+    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: 1, role: 'cashier', ph: this.ph, t: Math.round(this.t * 10) / 10, sc: this.sc, sv: this.sv, lost: this.lost, rid: this.rid, took: this.took, pose: quant(this.sent), sg: [this.signId, this.mySign || ''], lv: this.lvId, urg: this.queue[0] ? urgency(this.queue[0].pat) : 0 }); }
   }
   render(dt) {
     const T = this.clock, b = beat(), pulse = 1 - b.ph, beats = b.n;
@@ -178,9 +198,12 @@ export class Cashier extends View {
       let m = this.models.get(cu.id);
       if (!m) { m = makeCustomer(REGULARS[cu.reg].seed); m.position.set(-4, 1.3, -2.4); this.scene.add(m); this.models.set(cu.id, m); }
       const p = i === 0 ? ACTIVE : QPOS[i - 1]; m.position.x += (p[0] - m.position.x) * Math.min(1, dt * 3); m.position.z += (p[2] - m.position.z) * Math.min(1, dt * 3);
-      const pose = i === 0 && Math.hypot(m.position.x - p[0], m.position.z - p[2]) < 0.2 ? danceAt(REGULARS[cu.reg].dance, beats) : 'I';
+      let pose = i === 0 && Math.hypot(m.position.x - p[0], m.position.z - p[2]) < 0.2 ? danceAt(this.danceOf(cu), beats, this.L.beatsPerPose) : 'I';
+      const u = i === 0 ? urgency(cu.pat) : 0; if (pose === 'I' && u >= 2) pose = 'X';
       applyPose(m.userData.rig, POSES[pose].v, Math.min(1, dt * 12));
-      m.position.y = p[1] + Math.abs(Math.sin((T * Math.PI * BPM) / 60 + i)) * 0.03; m.rotation.y = i === 0 ? 0 : Math.sin(T * 0.6 + i) * 0.3;
+      if (u >= 2) m.userData.rig.head.rotation.y += Math.sin(T * 9) * 0.25;
+      m.position.y = p[1] + Math.abs(Math.sin((T * Math.PI * BPM) / 60 * (u >= 1 ? 2 : 1) + i)) * (u >= 1 ? 0.05 : 0.03);
+      const ry = i === 0 ? (u >= 3 ? -0.8 : 0) : Math.sin(T * 0.6 + i) * 0.3; m.rotation.y += (ry - m.rotation.y) * Math.min(1, dt * 4);
       m.userData.mats.forEach((mt) => mt.emissive.setRGB(cu.flash, 0, 0));
     });
     if (this.lit === 'cu' && this.queue[0]) this.models.get(this.queue[0].id)?.userData.mats.forEach((mt) => mt.emissive.setHex(0x6a5400));
@@ -196,22 +219,30 @@ export class Cashier extends View {
       const R = REGULARS[cu.reg]; const [x, y0] = this.at(ACTIVE[0], ACTIVE[1] + 0.62, ACTIVE[2]); const y = y0 - 70, bw = 190, bx = x - bw / 2;
       c.fillStyle = '#fff'; rr(c, bx, y, bw, 70, 14); c.fill(); c.beginPath(); c.moveTo(x - 10, y + 70); c.lineTo(x + 2, y + 84); c.lineTo(x + 12, y + 70); c.fill();
       c.fillStyle = '#2a1a14'; c.font = '13px Bungee, sans-serif'; c.textAlign = 'center'; c.fillText(R.name, x, y + 17);
-      const len = (R.dance.length + 1) * BEATS_PER_POSE, si = Math.floor((((beats % len) + len) % len) / BEATS_PER_POSE);
-      [...R.dance].forEach((k, j) => { const px = bx + 40 + j * 55, on = si === j; if (on) { c.fillStyle = '#ffe14a'; rr(c, px - 22, y + 22, 44, 44, 8); c.fill(); } drawPoseIcon(c, k, px, y + 44, 0.85, '#2a1a14'); });
-      const f = cu.pat / cu.max; bar(c, bx + 8, y - 12, bw - 16, 7, f, f > 0.5 ? '#3fbf5f' : f > 0.25 ? '#f0b030' : '#e04040');
+      const D = this.danceOf(cu), bpp = this.L.beatsPerPose, len = (D.length + 1) * bpp, si = Math.floor((((beats % len) + len) % len) / bpp);
+      const step = Math.min(55, (bw - 40) / Math.max(1, D.length - 1)); [...D].forEach((k, j) => { const px = bx + 40 + j * (D.length > 1 ? step : 0), on = si === j; if (on) { c.fillStyle = '#ffe14a'; rr(c, px - 22, y + 22, 44, 44, 8); c.fill(); } drawPoseIcon(c, k, px, y + 44, 0.85, '#2a1a14'); });
+      const f = cu.pat / cu.max, u = urgency(cu.pat); bar(c, bx + 8, y - 12, bw - 16, 7, f, URGENCY_COL[u]);
+      // patience ring round the regular, with the seconds and the 60/30/10 cues
+      const [rx, ry] = this.at(ACTIVE[0], ACTIVE[1], ACTIVE[2]); const flash = u === 3 && Math.floor(this.clock * 4) % 2;
+      c.lineWidth = 7; c.strokeStyle = '#0008'; c.beginPath(); c.arc(rx, ry, 92, 0, 7); c.stroke();
+      if (!flash) { c.strokeStyle = URGENCY_COL[u]; c.beginPath(); c.arc(rx, ry, 92, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * f); c.stroke(); }
+      c.font = '16px Bungee, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#000c'; const st = `${Math.ceil(cu.pat)}s${u ? '  ' + URGENCY_TEXT[u] : ''}`; c.strokeText(st, rx, ry + 118); c.fillStyle = URGENCY_COL[u]; c.fillText(st, rx, ry + 118);
     }
     if (this.queue.length > 1) this.label(0, 2.25, -2.4, `${this.queue.length - 1} waiting`, '#bba9c8', 10);
     if (this.tray) this.label(1.55, 1.32, 0.05, 'DÖNER!', '#7dff9a', 13);
     if (this.held && cu) this.label(ACTIVE[0], 0.98, ACTIVE[2] + 0.5, 'TAP THE REGULAR TO SERVE', '#7dff9a', 11);
-    this.hud(this.t, this.sc, VW - 16, 40);
+    this.hud(this.t, this.sc, VW - 16, 46); c.textAlign = 'right'; c.font = '10px Bungee, sans-serif'; c.fillStyle = '#bba9c8'; c.fillText(`SHIFT · ${this.L.name.toUpperCase()}`, VW - 16, 14);
+    // camera hand: hold it over the tray to take, over the regular to serve
+    if (this.cam) { const tg = []; if (this.tray && !this.held) { const [tx, ty] = this.at(1.55, 1.05, 0.05); tg.push({ id: 'tray', x: tx - 80, y: ty - 60, w: 160, h: 110 }); } if (this.held && cu) { const [qx, qy] = this.at(ACTIVE[0], ACTIVE[1], ACTIVE[2]); tg.push({ id: 'cu', x: qx - 110, y: qy - 110, w: 220, h: 240 }); } this.handTargets(dt, this.cam, tg); tg.forEach((q) => { c.strokeStyle = '#7dff9a88'; c.setLineDash([8, 6]); c.lineWidth = 3; rr(c, q.x, q.y, q.w, q.h, 14); c.stroke(); c.setLineDash([]); }); } else this.handXY = null;
     // self view frame
     c.strokeStyle = '#ffcf5a'; c.lineWidth = 3; rr(c, 8, 312, 200, 150, 8); c.stroke(); c.fillStyle = '#000b'; rr(c, 8, 292, 200, 22, 6); c.fill(); c.fillStyle = '#ffcf5a'; c.font = '10px Bungee, sans-serif'; c.textAlign = 'center'; c.fillText('WHAT BRUNO SEES', 108, 307);
     if (this.camMsg) { c.fillStyle = '#000c'; rr(c, 220, 400, 520, 30, 8); c.fill(); c.fillStyle = '#fff'; c.font = '13px Archivo, sans-serif'; c.fillText(this.camMsg, 480, 420); }
     c.fillStyle = '#120a18'; c.fillRect(0, 470, VW, 70);
     POSE_KEYS.forEach((k, i) => { const x = 12 + i * 70; this.button('pz' + k, x, 476, 64, 58, !this.cam && this.poseKey === k); drawPoseIcon(c, k, x + 32, 498, 0.8); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.textAlign = 'center'; c.fillText(`${i + 1} ${POSES[k].name}`, x + 32, 530); });
     this.button('pzI', 12 + 6 * 70, 476, 64, 58, !this.cam && this.poseKey === 'I'); drawPoseIcon(c, 'I', 12 + 6 * 70 + 32, 498, 0.8); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.fillText('0 Rest', 12 + 6 * 70 + 32, 530);
-    this.button('cam', 520, 476, 150, 58, !!this.cam); c.fillStyle = '#fff'; c.font = '13px Bungee, sans-serif'; c.fillText(this.cam ? 'CAMERA ON' : 'USE CAMERA', 595, 503); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.fillText(this.cam ? 'dance with your arms' : 'copy with your body', 595, 520);
-    c.textAlign = 'left'; c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('Copy the regular\'s dance.', 690, 496); c.fillText('Bruno reads it and cooks.', 690, 514);
+    this.button('pzW', 12 + 7 * 70, 476, 64, 58, !this.cam && this.poseKey === 'W'); drawPoseIcon(c, 'W', 12 + 7 * 70 + 32, 498, 0.8); c.fillStyle = '#ffcf5a'; c.font = '10px Archivo, sans-serif'; c.fillText('7 Hurry!', 12 + 7 * 70 + 32, 530);
+    this.button('cam', 580, 476, 130, 58, !!this.cam); c.fillStyle = '#fff'; c.font = '12px Bungee, sans-serif'; c.fillText(this.cam ? 'CAMERA ON' : 'USE CAMERA', 645, 503); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.fillText(this.cam ? 'hand: take & serve' : 'copy with your body', 645, 520);
+    c.textAlign = 'left'; c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('Copy the regular\'s dance.', 722, 496); c.fillText('Tap your wrist: hurry!', 722, 514);
     if (this.ph === 'play' && this.sv === 0 && this.t > 165) { c.textAlign = 'center'; c.fillStyle = '#000c'; rr(c, 230, 220, 500, 64, 12); c.fill(); c.fillStyle = '#fff'; c.font = '15px Archivo, sans-serif'; c.fillText('You can\'t hear a thing. Copy each regular\'s dance (camera or 1–6).', 480, 245); c.fillText('Bruno knows what they always order. Serve what he passes you.', 480, 268); }
     this.finish(dt);
   }
@@ -221,10 +252,10 @@ export class Cashier extends View {
 const HX = 0.15;
 export class Chef extends View {
   viewport() { return { x: 250, w: 710 }; }
-  constructor(stage, ep) { super(stage); this.kind = 0; this.ep = ep; Object.assign(this, { plate: null, board: null, boardP: 0, shave: 0, pass: null, passId: 0, rid: -1, clock: 0, lastSend: 0, flashT: 0 }); }
+  constructor(stage, ep) { super(stage); this.kind = 0; this.ep = ep; Object.assign(this, { plate: null, board: null, boardP: 0, shave: 0, pass: null, passId: 0, rid: -1, clock: 0, lastSend: 0, flashT: 0, knockT: 0, shakeT: 0 }); }
   build() {
     const s = this.scene, cam = this.camera; s.background = new THREE.Color(0x0b1416); s.fog = new THREE.Fog(0x0b1416, 4, 12);
-    cam.fov = 56; cam.updateProjectionMatrix(); cam.position.set(HX, 1.85, 1.9); cam.lookAt(HX, 1.22, -0.8);
+    cam.fov = 56; cam.updateProjectionMatrix(); cam.position.set(HX, 1.85, 1.9); cam.lookAt(HX, 1.22, -0.8); this.camBase = cam.position.clone();
     s.add(new THREE.HemisphereLight(0xfff0d8, 0x332018, 0.7 * LI)); const kl = new THREE.PointLight(0xffe0b0, 1.1 * LI, 6, 0); kl.position.set(0, 2.5, 0.6); s.add(kl);
     // back wall with the hatch (x -0.4..0.7, y 1.2..2.15)
     const tm = lam(0xffffff, { map: getTex('tiles') }), z = -1.0;
@@ -273,6 +304,8 @@ export class Chef extends View {
     if (P && P.rid !== this.rid) { this.rid = P.rid; this.reset(); }
     if (this.pass && P && P.took >= this.pass[0]) this.pass = null;
     const play = P && P.ph === 'play';
+    // somebody is banging on the counter: Bruno only hears that much
+    if (play && P.urg >= 2) { this.knockT -= dt; if (this.knockT <= 0) { this.knockT = P.urg >= 3 ? 1.4 : 2.6; this.shakeT = 0.35; if (!this.headless) { sfx('knock'); const [x, y] = this.scr(HX, 2.2, -1.0); this.pop(x + (Math.random() - 0.5) * 120, y, 'BANG', '#ff7a30'); } } } else this.knockT = 0.5;
     if (play && this.holdId === 'spit') {
       if (!this.plate) { if (this.shave === 0) { const [x, y] = this.scr(1.35, 2.0, -0.62); this.pop(x, y, 'Bread first!', '#ffcf5a'); } this.shave = 0.001; }
       else if (!this.plate.includes('m')) { this.shave += dt / 1.1; if (Math.random() < dt * 9) sfx('chop'); if (this.shave >= 1) { this.shave = 0; this.addToPlate('m'); sfx('pick'); } }
@@ -283,6 +316,7 @@ export class Chef extends View {
   }
   render(dt) {
     const P = this.P, b = beat(), T = this.clock;
+    this.camera.position.copy(this.camBase); this.rattle(dt);
     this.meat.rotation.y = T * 1.4; this.heat.material.color.setHSL(0.06, 1, 0.45 + 0.08 * Math.sin(T * 5));
     this.cl.intensity = (0.5 + 1.8 * (1 - b.ph)) * LI; this.dark.material.opacity = 0.38 * (1 - Math.pow(1 - b.ph, 3));
     this.flashT -= dt; if (this.flashT < -40 - Math.random() * 30) this.flashT = 5; this.blue.intensity = this.flashT > 0 && Math.floor(T * 8) % 2 ? 2.5 * LI : 0;
@@ -301,11 +335,12 @@ export class Chef extends View {
     this.label(HX, 2.3, -1.0, 'BÄRBEL', '#ffb238', 12);
     // the book
     c.fillStyle = '#efe2c4'; c.fillRect(0, 0, 250, 470); c.fillStyle = '#d9c9a6'; c.fillRect(244, 0, 6, 470);
-    c.fillStyle = '#5a2a14'; c.font = '15px Bungee, sans-serif'; c.textAlign = 'left'; c.fillText('STAMMKUNDEN', 14, 26); c.font = '10px Archivo, sans-serif'; c.fillStyle = '#7a5a40'; c.fillText('Bruno\'s book · dance → their usual', 14, 40);
+    c.fillStyle = '#5a2a14'; c.font = '15px Bungee, sans-serif'; c.textAlign = 'left'; c.fillText('STAMMKUNDEN', 14, 26); c.font = '10px Archivo, sans-serif'; c.fillStyle = '#7a5a40'; c.fillText(`Bruno's book · ${lv(P?.lv).name} · tapping wrist = hurry!`, 14, 40);
+    const dl = lv(P?.lv).danceLen;
     REGULARS.forEach((R, i) => {
       const y = 50 + i * 52; c.fillStyle = i % 2 ? '#e8d8b6' : '#f3e9d2'; c.fillRect(6, y, 236, 50);
       drawFace(c, R.seed, 24, y + 27, 12); c.fillStyle = '#3a2010'; c.font = '11px Bungee, sans-serif'; c.textAlign = 'left'; c.fillText(R.name, 42, y + 14);
-      [...R.dance].forEach((k, j) => drawPoseIcon(c, k, 54 + j * 26, y + 31, 0.62, '#3a2010'));
+      [...danceFor(R, dl)].forEach((k, j) => drawPoseIcon(c, k, 52 + j * (dl > 3 ? 20 : 26), y + 31, dl > 3 ? 0.55 : 0.62, '#3a2010'));
       const rc = RECIPES[R.rec]; c.fillStyle = '#7a5a40'; c.font = '9px Archivo, sans-serif'; c.fillText(rc[0], 132, y + 14);
       [...rc[1]].forEach((ch, j) => drawItem(c, 'lto'.includes(ch) ? ch.toUpperCase() : ch, 140 + j * 17, y + 34, 0.42));
     });

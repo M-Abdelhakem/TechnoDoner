@@ -1,4 +1,4 @@
-# Berlin Bears
+# TechnoDöner (repo and Worker still named berlin-bears)
 
 Two-device co-op: a döner window outside a Berlin techno club, too loud to talk. Read `~/Games/AGENTS.md` first for
 publishing and the lab; this file covers this game. Design: `docs/GDD.md`.
@@ -7,9 +7,9 @@ publishing and the lab; this file covers this game. Design: `docs/GDD.md`.
 
 | Address | Version | Code |
 |---|---|---|
-| `/` | **Berlin Bears**: regulars dance their usual, the chef has the book (camera or keys) | `index.html`, `src/*.ts` |
-| `/technodoner` | **TechnoDöner**: TechnoDoner's traits + rule book + turning around, on this engine (PS2 look, body-pose signing, rooms, bots) | `technodoner.html`, `src/mix/` |
-| `/original/` | **TechnoDoner 1:1**: m-abdelhakem's game as written, its Node server ported to a Durable Object (`OriginalGame`, `?room=` for separate games) | `public/original/`, `worker/original.js` |
+| `/` | **TechnoDöner · Regulars**: regulars dance their usual, the chef has the book (camera or keys) | `index.html`, `src/*.ts` |
+| `/technodoner` | **TechnoDöner · Rule Book**: TechnoDoner's traits + rule book + turning around, on this engine (PS2 look, body-pose signing, rooms, bots) | `technodoner.html`, `src/mix/` |
+| `/original/` | **TechnoDöner · Original** (1:1): m-abdelhakem's game as written, its Node server ported to a Durable Object (`OriginalGame`, `?room=` for separate games) | `public/original/`, `worker/original.js` |
 
 Each menu shows a QR code of its own address. Quick play keeps one Lobby per version (`?lobby=`), and room states carry
 a version tag (`bb: 1` or `2`), so versions never pair. Credits: `docs/CREDITS.md`.

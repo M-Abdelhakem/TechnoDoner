@@ -17,10 +17,14 @@ export const POSES = {
   C: { name: 'Clap', v: P([-0.45, -0.55, 0.7], [0.75, 0.15, 0.6], [0.45, -0.55, 0.7], [-0.75, 0.15, 0.6]) },
   H: { name: 'Hands on head', v: P([-0.85, 0.5, 0], [0.6, 0.75, 0], [0.85, 0.5, 0], [-0.6, 0.75, 0]) },
   N: { name: 'Lean', v: P([-1, 0.05, 0], [-1, 0, 0], [1, 0.05, 0], [1, 0, 0], 0, 0.25, 0.4) },
+  W: { name: 'Hurry!', v: P([-0.55, -0.25, 0.8], [0.95, 0.3, 0.15], [0.55, -0.45, 0.7], [-0.55, 0.8, 0.25], 0, 0, 0) },
+  X: { name: 'Arms crossed', v: P([-0.3, -0.75, 0.6], [0.95, 0.05, 0.3], [0.3, -0.75, 0.6], [-0.95, 0.1, 0.3]) },
   E: { name: 'Rub eyes', v: P([-0.35, -0.6, 0.7], [0.3, 0.9, 0.3], [0.35, -0.6, 0.7], [-0.3, 0.9, 0.3], 0, 0, 0) },
 };
 /** the buttons / keys 1-6, in order */
 export const POSE_KEYS = ['U', 'L', 'R', 'C', 'H', 'N'];
+/** customers only: arms crossed while they wait, impatient */
+export const CASHIER_EXTRA = ['W'];
 
 export const RECIPES = {
   klassik: ['Klassik', 'mltog'], fleisch: ['Nur Fleisch', 'mg'], scharf: ['Scharf', 'mloh'],
@@ -28,22 +32,25 @@ export const RECIPES = {
 };
 // seed picks the look in kit3d: species = seed % 5 (fox, raccoon, boar, rabbit, pigeon), accessory = (seed >> 2) % 4
 export const REGULARS = [
-  { name: 'Kalle', seed: 2, dance: 'UCU', rec: 'klassik' },
-  { name: 'Mia', seed: 0, dance: 'LRC', rec: 'scharf' },
-  { name: 'Dörte', seed: 3, dance: 'HUH', rec: 'gemuese' },
-  { name: 'Tarek', seed: 1, dance: 'RLU', rec: 'alles' },
-  { name: 'Uschi', seed: 4, dance: 'CHN', rec: 'fleisch' },
-  { name: 'Jens', seed: 5, dance: 'NUN', rec: 'ohnez' },
-  { name: 'Svetlana', seed: 8, dance: 'LCH', rec: 'klassik' },
-  { name: 'Ömer', seed: 7, dance: 'ULR', rec: 'scharf' },
+  { name: 'Kalle', seed: 2, dance: 'UCU', rec: 'klassik', d4: 'UCUH' },
+  { name: 'Mia', seed: 0, dance: 'LRC', rec: 'scharf', d4: 'LRCU' },
+  { name: 'Dörte', seed: 3, dance: 'HUH', rec: 'gemuese', d4: 'HUHC' },
+  { name: 'Tarek', seed: 1, dance: 'RLU', rec: 'alles', d4: 'RLUN' },
+  { name: 'Uschi', seed: 4, dance: 'CHN', rec: 'fleisch', d4: 'CHNU' },
+  { name: 'Jens', seed: 5, dance: 'NUN', rec: 'ohnez', d4: 'NUNC' },
+  { name: 'Svetlana', seed: 8, dance: 'LCH', rec: 'klassik', d4: 'LCHU' },
+  { name: 'Ömer', seed: 7, dance: 'ULR', rec: 'scharf', d4: 'ULRC' },
 ];
 /** a regular's routine: each pose held this many beats, then one rest beat */
 export const BEATS_PER_POSE = 2;
-export function danceAt(dance: string, beats: number) {
-  const len = dance.length * BEATS_PER_POSE + BEATS_PER_POSE;
-  const i = Math.floor(((beats % len) + len) % len / BEATS_PER_POSE);
+export function danceAt(dance: string, beats: number, bpp = BEATS_PER_POSE) {
+  const len = dance.length * bpp + bpp;
+  const i = Math.floor(((beats % len) + len) % len / bpp);
   return i < dance.length ? dance[i] : 'I';
 }
+
+/** a regular's routine at a difficulty: Chill the first two poses, Normal three, Rave four */
+export const danceFor = (R, len: number) => (len >= 4 ? R.d4 : R.dance.slice(0, len));
 
 /** nearest named pose and its distance (arms count most, lean a little) */
 export function classify(v: number[]) {

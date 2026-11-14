@@ -7,13 +7,19 @@ import { MixCashier, MixChef } from './views';
 import { BotMixChef, BotMixCashier } from './bots';
 import { SIGNS, ING } from './rules';
 import { loopPair, wsEndpoint, quickMatch, newCode } from '../net';
-import { startMusic, stopMusic, initAudio } from '../audio';
+import { startMusic, stopMusic, initAudio, setIntensity, toggleMute, BPM } from '../audio';
+import { lv } from '../levels';
 
 const platform = detectPlatform('berlin-bears');
 const $ = (id) => document.getElementById(id);
 const stage = $('stage'), botstage = $('botstage');
 const VER = 2, LOBBY = 'mix';
-let views = [], bots = [], cashier = null, mode = null, human = 'both', ep = null, code = null, myRole = null, joinWait = null;
+let views = [], bots = [], cashier = null, mode = null, human = 'both', ep = null, code = null, myRole = null, joinWait = null, music = false;
+let level = 'normal'; try { level = localStorage.getItem('td-level') || 'normal'; } catch {}
+const levelBtns = [...document.querySelectorAll('[data-level]')];
+const pickLevel = (l) => { level = l; levelBtns.forEach((b) => b.classList.toggle('on', b.dataset.level === l)); try { localStorage.setItem('td-level', l); } catch {} };
+levelBtns.forEach((b) => (b.onclick = () => pickLevel(b.dataset.level))); pickLevel(level);
+const play = (bpm) => { startMusic({ bpm, muffled: false }); music = true; };
 
 const siteURL = () => location.origin + location.pathname;
 QRCode.toCanvas($('siteQr'), siteURL(), { width: 120, margin: 1 }).catch(() => {}); $('siteUrl').textContent = siteURL();
@@ -27,7 +33,7 @@ function playtest(who) {
   if (who === 'both') { stage.className = 'two'; cashier = new MixCashier(stage, a); views = [cashier, new MixChef(stage, b)]; }
   else if (who === 'cashier') { stage.className = 'one'; cashier = new MixCashier(stage, a); const ch = new MixChef(botstage, b); views = [cashier, ch]; bots = [new BotMixChef(ch)]; }
   else { stage.className = 'one'; const ch = new MixChef(stage, b); cashier = new MixCashier(botstage, a); views = [ch, cashier]; bots = [new BotMixCashier(cashier)]; }
-  views.forEach((v) => v.resize()); show(null); startMusic(); cashier.start();
+  views.forEach((v) => v.resize()); show(null); play(lv(level).bpm); cashier.start(level);
 }
 function host(role, given?) { clearViews(); code = given || newCode(); ep = wsEndpoint(code, role, VER); enter(role); }
 function join(c) {
@@ -37,7 +43,7 @@ function join(c) {
   joinWait = setInterval(() => {
     const h = ep.peers().find((d) => d.bb === VER && d.role);
     if (h) { clearInterval(joinWait); const r = h.role === 'cashier' ? 'chef' : 'cashier'; ep.setRole(r); enter(r); }
-    else if (Date.now() - t0 > 20000) { clearInterval(joinWait); $('waitMsg').textContent = 'Nobody is in a TechnoDöner kitchen with that code. Check it and try again.'; }
+    else if (Date.now() - t0 > 30000) { clearInterval(joinWait); $('waitMsg').textContent = 'Nobody is in a TechnoDöner kitchen with that code. Check it and try again.'; }
   }, 200);
 }
 function enter(role) {
@@ -47,7 +53,7 @@ function enter(role) {
   const link = `${siteURL()}?k=${code}`;
   $('waitCode').textContent = code; $('joinLink').textContent = link; $('qrBox').hidden = false;
   QRCode.toCanvas($('qr'), link, { width: 150, margin: 1 }).catch(() => {});
-  show('wait'); startMusic();
+  show('wait'); play(lv(level).bpm);
 }
 async function quick() {
   const b = $('quickBtn'); b.disabled = true; b.textContent = 'Looking for a kitchen…';
@@ -55,20 +61,22 @@ async function quick() {
   b.disabled = false; b.textContent = 'Quick play';
   if (r.join) join(r.join); else if (r.host) host('cashier', mine); else $('netNote').textContent = 'Could not reach the kitchen server. Try again, or playtest on this device.';
 }
-function leave() { stopMusic(); clearInterval(joinWait); ep?.close(); ep = null; if (code && mode === 'online') quickMatch(code, true, LOBBY); clearViews(); mode = null; code = null; show('menu'); }
+function leave() { stopMusic(); music = false; clearInterval(joinWait); ep?.close(); ep = null; if (code && mode === 'online') quickMatch(code, true, LOBBY); clearViews(); mode = null; code = null; show('menu'); }
 
 $('ptCashier').onclick = () => playtest('cashier'); $('ptChef').onclick = () => playtest('chef'); $('ptBoth').onclick = () => playtest('both');
 $('quickBtn').onclick = quick; $('hostCashier').onclick = () => host('cashier'); $('hostChef').onclick = () => host('chef');
 $('joinBtn').onclick = () => { const c = $('codeIn').value.trim(); if (c) join(c); };
 $('codeIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('joinBtn').click(); });
-$('openShop').onclick = () => { if (cashier) { cashier.start(); show(null); } };
-$('again').onclick = () => { if (cashier) { cashier.start(); show(null); } };
+$('openShop').onclick = () => { if (cashier) { cashier.start(level); show(null); } };
+$('again').onclick = () => { if (cashier) { cashier.start(level); show(null); } };
 $('leave1').onclick = leave; $('leave2').onclick = leave;
 $('copyLink').onclick = () => { navigator.clipboard?.writeText($('joinLink').textContent).then(() => ($('copyLink').textContent = 'Copied'), () => {}); };
 addEventListener('pointerdown', initAudio, { once: true });
 
 addEventListener('keydown', (e) => {
-  if (!views.length || e.repeat || e.target instanceof HTMLInputElement) return;
+  if (e.target instanceof HTMLInputElement) return;
+  if ((e.key === 'm' || e.key === 'M') && !e.repeat) { initAudio(); toggleMute(); return; }
+  if (!views.length || e.repeat) return;
   const cashierHuman = mode === 'online' ? myRole === 'cashier' : human !== 'chef';
   const chefHuman = mode === 'online' ? myRole === 'chef' : human !== 'cashier';
   const ch = chefView();
@@ -76,6 +84,7 @@ addEventListener('keydown', (e) => {
     if (e.code === 'Space') { e.preventDefault(); cashier.turn(); return; }
     const s = SIGNS.find((s) => s.key === e.key.toUpperCase()); if (s) { cashier.sign(s.id); return; }
     if (e.key === 'c' || e.key === 'C') { cashier.toggleCamera(); return; }
+    if (e.key === 'g' || e.key === 'G') { if (cashier.face === 1) cashier.take(); else cashier.give(); return; }
   }
   if (chefHuman && ch) {
     if ((e.code === 'Space' && !cashierHuman) || (e.key === 'f' || e.key === 'F')) { e.preventDefault(); ch.turn(); return; }
@@ -94,6 +103,8 @@ function showEnd(s) {
 }
 function step(dt) {
   views.forEach((v) => v.update(dt)); bots.forEach((b) => b.tick(dt));
+  const src = cashier && cashier.ph !== 'wait' ? cashier : views[0]?.ep?.partner?.();
+  if (music && src) { const want = lv(src.lvId || src.lv).bpm; if (want !== BPM) play(want); setIntensity(src.ph === 'play' && src.t < 60 ? 1 : 0); }
   if (mode === 'online' && views[0]) {
     const P = views[0].ep.partner(); const ph = myRole === 'cashier' ? cashier.ph : P?.ph;
     if (ph === 'play') { if (!$('wait').hidden || !$('end').hidden) show(null); }

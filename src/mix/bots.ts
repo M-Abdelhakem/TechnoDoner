@@ -22,7 +22,7 @@ export class BotMixChef {
       const s = SIGN_BY_POSE[k]; if (!s) return;
       if (s.id === 'serve') { this.q = [...this.list]; this.list = []; this.st = 'cook'; this.t = 0.3; ch.sign('+'); }
       else if (s.id === 'over') this.list = [];
-      else this.list.push(s.id);
+      else if (s.id !== 'hurry') this.list.push(s.id);
       return;
     }
     if (this.t > 0) return;
@@ -32,6 +32,7 @@ export class BotMixChef {
       if (id === 'm') { const n = ch.plate.filter((x) => x === 'm').length; if (ch.holdId !== 'm') { this.before = n; ch.holdId = 'm'; } else if (n > this.before) { ch.holdId = null; this.q.shift(); this.t = 0.3; } return; }
       ch.click(id); this.q.shift(); this.t = 0.35; return;
     }
+    if (ch.sillBusy()) { this.t = 0.3; return; } // the last one is still on the sill
     ch.serve(); this.st = 'watch'; this.t = 0.5; this.last = 'I';
   }
 }
@@ -45,5 +46,8 @@ export class BotMixCashier {
     if (this.st === 'read') { if (ca.face !== 1) ca.turn(); this.st = 'sign'; this.t = 0.8; return; }
     if (this.st === 'sign') { if (!P || !P.watch) { this.t = 0.3; return; } ordered(expected(ca.cust.traits).list).forEach((id) => ca.sign(id)); ca.sign('serve'); this.st = 'wait'; return; }
     if (this.st === 'wait' && ca.pSign === '?' && ca.pSignT > 1.9 && ca.sawSign !== this.asked) { this.asked = ca.sawSign; ca.q = []; this.st = 'sign'; }
+    // Bruno passed it: take it off the sill, turn round, hand it over
+    if (this.st === 'wait' && ca.sill && !ca.held) { if (ca.face !== 1) { ca.turn(); this.t = 0.6; return; } ca.take(); ca.turn(); this.st = 'give'; this.t = 0.7; return; }
+    if (this.st === 'give') { if (ca.face !== 0) { ca.turn(); this.t = 0.6; return; } ca.give(); this.st = 'read'; this.t = 1; }
   }
 }
