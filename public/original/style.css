@@ -5,7 +5,7 @@ canvas { display: block; }
 .hud * { pointer-events: auto; }
 #topbar { top: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 28px; padding: 10px; font-weight: 800; font-size: 22px; text-shadow: 0 0 8px #ff00aa; background: linear-gradient(#000c, #0000); }
 #topbar span b { color: #00e5ff; }
-#patience { top: 52px; left: 50%; transform: translateX(-50%); width: 320px; height: 12px; background: #fff2; border-radius: 6px; overflow: hidden; }
+#patience { top: 66px; left: 50%; transform: translateX(-50%); width: 320px; height: 12px; background: #fff2; border-radius: 6px; overflow: hidden; }
 #patience div { height: 100%; width: 100%; background: linear-gradient(90deg, #ff1744, #ffea00, #00e676); transition: width .25s linear; }
 .overlay { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #05010aee; text-align: center; padding: 20px; }
 .overlay h1 { font-size: 64px; margin: 0; color: #ff00aa; text-shadow: 0 0 20px #ff00aa, 0 0 40px #7c4dff; letter-spacing: 2px; }
@@ -17,3 +17,22 @@ button.big:hover { background: #ff33bb; }
 #flash small { font-size: 22px; font-weight: 600; max-width: 700px; text-align: center; margin-top: 10px; background: #000a; padding: 10px 16px; border-radius: 10px; }
 .key { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5px; background: #fff2; border: 1px solid #fff5; font-size: 12px; font-weight: 700; }
 #help { bottom: 10px; left: 10px; font-size: 13px; color: #ccc; background: #000a; padding: 8px 12px; border-radius: 10px; line-height: 1.7; }
+/* ---------- playtest additions ---------- */
+#topbar { align-items: center; flex-wrap: wrap; row-gap: 4px; }
+#topbar .big { font-size: 34px; }
+#topbar #mmss { font-size: 16px; color: #ccc; font-weight: 700; margin-left: 4px; }
+#topbar #timeBox.final b, #topbar #timeBox.final #mmss { color: #ff1744; animation: tdPulse 0.8s ease-in-out infinite; }
+#levelTag { font-size: 15px; padding: 3px 10px; border-radius: 999px; background: #fff1; border: 1px solid #fff4; text-shadow: none; }
+#levelTag[data-level="chill"] { border-color: #69f0ae; color: #b9f6ca; }
+#levelTag[data-level="rave"] { border-color: #ff1744; color: #ff8a80; box-shadow: 0 0 12px #ff174488; }
+#muteBtn { font-size: 20px; line-height: 1; padding: 4px 8px; border-radius: 10px; border: 1px solid #fff4; background: #0008; color: #fff; cursor: pointer; }
+#netBadge { position: fixed; z-index: 40; top: 54px; left: 50%; transform: translateX(-50%); background: #ff1744; color: #fff; font-weight: 800; font-size: 14px; padding: 4px 12px; border-radius: 8px; pointer-events: none; }
+#flash small { pointer-events: none; cursor: pointer; }
+#toast { top: 40%; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 900; background: #000d; border: 2px solid #ffd600; color: #ffd600; padding: 10px 20px; border-radius: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; text-align: center; }
+.levels { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.levels button { width: 190px; padding: 10px 12px; border-radius: 14px; border: 2px solid #7c4dff; background: #1a0d24; color: #fff; cursor: pointer; font-size: 18px; font-weight: 900; }
+.levels button small { display: block; font-size: 12px; font-weight: 500; color: #bbb; margin-top: 4px; line-height: 1.3; }
+.levels button.on { border-color: #ff00aa; background: #3a0a2e; box-shadow: 0 0 18px #ff00aa; }
+.levels button:disabled { cursor: default; }
+@keyframes tdPulse { 50% { opacity: 0.45; } }
+@keyframes tdFlash { 50% { opacity: 0.25; } }

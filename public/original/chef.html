@@ -1,38 +1,62 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Döner Bears · Chef</title><link rel="stylesheet" href="./style.css">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TechnoDöner · Original · Chef</title><link rel="stylesheet" href="./style.css">
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
 <style>
-  #plate { bottom: 12px; left: 50%; transform: translateX(-50%); background: #000b; border: 1px solid #ff00aa66; border-radius: 14px; padding: 8px 14px; font-size: 18px; font-weight: 700; display: flex; gap: 10px; align-items: center; }
-  #plate button { font-size: 18px; font-weight: 900; padding: 10px 16px; border-radius: 10px; border: 0; cursor: pointer; }
+  :root { --book: 330px; }
+  #plate { bottom: 12px; left: calc(50% + var(--bookOpen, 0px) / 2); transform: translateX(-50%); background: #000b; border: 1px solid #ff00aa66; border-radius: 14px; padding: 8px 14px; font-size: 18px; font-weight: 700; display: flex; gap: 10px; align-items: center; white-space: nowrap; }
+  #plate button { font-size: 17px; font-weight: 900; padding: 10px 14px; border-radius: 10px; border: 0; cursor: pointer; }
   #serveBtn { background: #00e676; color: #000; }
+  #serveBtn:disabled { opacity: 0.4; cursor: default; }
   #trashBtn { background: #ff1744; color: #fff; }
-  #turnBtn { top: 70px; right: 16px; font-size: 18px; font-weight: 900; padding: 12px 18px; border-radius: 12px; border: 0; background: #00e5ff; color: #000; cursor: pointer; box-shadow: 0 0 20px #00e5ff88; }
-  #cheat { top: 70px; left: 16px; background: #000c; border: 1px solid #7c4dff; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.6; display: none; }
-  #cheat.open { display: block; }
-  #cheatBtn { top: 70px; left: 16px; font-size: 14px; font-weight: 800; padding: 8px 12px; border-radius: 10px; border: 0; background: #7c4dff; color: #fff; cursor: pointer; }
-  #cheat.open + #cheatBtn { display: none; }
+  #sillMsg { color: #ffd600; font-size: 15px; }
+  #sillMsg:empty { display: none; }
+  #sigBtns { top: 84px; right: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  #sigBtns button { font-size: 16px; font-weight: 900; padding: 8px 14px; border-radius: 12px; border: 0; cursor: pointer; background: #00e5ff; color: #000; }
+  #sigBtns #bookBtn { background: #ffd600; }
+  #help { bottom: 86px; right: 10px; left: auto; }
+  #lobbyLevel { font-size: 20px; font-weight: 800; }
+  /* the book of regulars */
+  #book { position: fixed; z-index: 6; left: 0; top: 52px; bottom: 0; width: var(--book); max-width: 92vw; overflow-y: auto; background: #f4ead5; color: #2a1a10; padding: 12px 14px 20px; font-family: Georgia, serif; box-shadow: 10px 0 30px #000a; transform: translateX(-105%); transition: transform .2s; }
+  #book.open { transform: none; }
+  #book h2 { margin: 0; font-size: 22px; letter-spacing: 2px; color: #5a2a14; }
+  #book .intro { font-size: 13px; color: #6a4a30; margin: 4px 0 8px; }
+  #book .legend { display: flex; flex-wrap: wrap; gap: 4px 8px; font: 700 11px system-ui, sans-serif; color: #5a3a20; margin-bottom: 8px; }
+  #book .legend span { display: inline-flex; align-items: center; gap: 2px; }
+  #book .legend img { width: 26px; height: 26px; }
+  #book .reg { display: grid; grid-template-columns: 44px 1fr; gap: 0 8px; padding: 6px; border-radius: 8px; font-family: system-ui, sans-serif; }
+  #book .reg:nth-child(odd) { background: #e8d8b6; }
+  #book .face { grid-row: span 2; width: 44px; height: 44px; border-radius: 50%; border: 4px solid; display: grid; place-items: center; font-size: 22px; position: relative; }
+  #book .face::before, #book .face::after { content: ''; position: absolute; top: -6px; width: 14px; height: 14px; border-radius: 50%; background: inherit; border: inherit; border-width: 2px; }
+  #book .face::before { left: -2px; } #book .face::after { right: -2px; }
+  #book .nm { font-weight: 900; font-size: 15px; display: flex; justify-content: space-between; gap: 6px; }
+  #book .nm small { font-weight: 700; color: #7a5a40; font-size: 12px; }
+  #book .row2 { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  #book .dance img { width: 34px; height: 34px; }
+  #book .usual { font-size: 18px; letter-spacing: -2px; }
   /* port: QR of this page in the lobby corner */
   #qr { position: absolute; right: 12px; bottom: 12px; background: #fff; padding: 4px; border-radius: 8px; line-height: 0; }
   #qr svg { width: 96px; height: 96px; display: block; }
 </style></head>
 <body>
-<div id="topbar" class="hud"><span>🕒 <b id="clock">02:00</b></span><span>⏳ <b id="time">0</b>s</span><span>⭐ <b id="score">0</b></span><span>🥙 <b id="served">0</b></span></div>
-<div id="patience" class="hud"><div></div></div>
-<button id="turnBtn" class="hud">🔄 Turn around <span class="key">SPACE</span></button>
-<div id="cheat" class="hud"></div>
-<button id="cheatBtn" class="hud">🤲 Gesture guide <span class="key">G</span></button>
-<div id="plate" class="hud"><span id="plateList">Plate: empty</span><button id="trashBtn">🗑️ <span class="key">⌫</span></button><button id="serveBtn">🛎️ SERVE <span class="key">ENTER</span></button></div>
+<div id="topbar" class="hud"><span class="big">🕒 <b id="clock">02:00</b></span><span id="timeBox">⏳ <b id="time">0</b>s <span id="mmss">0:00</span></span><span>⭐ <b id="score">0</b></span><span>🥙 <b id="served">0</b></span><span id="levelTag">🙂 Normal</span><button id="muteBtn">🔊</button></div>
+<div id="book" class="open"></div>
+<div id="sigBtns" class="hud">
+  <button id="bookBtn">📖 Book <span class="key">B</span></button>
+  <button id="okBtn">🙌 Got it <span class="key">O</span></button>
+  <button id="confBtn">🤷 Again? <span class="key">?</span></button>
+</div>
+<div id="plate" class="hud"><span id="plateList">Plate: empty</span><span id="sillMsg"></span><button id="trashBtn">🗑️ <span class="key">⌫</span></button><button id="serveBtn">🛎️ To the window <span class="key">ENTER</span></button></div>
+<div id="toast" class="hud"></div>
 <div id="help" class="hud">
-  <span class="key">SPACE</span> turn between table & window<br>
-  <span class="key">1</span>–<span class="key">5</span> or click to add ingredient<br>
-  <span class="key">ENTER</span> serve · <span class="key">⌫</span> trash<br>
-  Tell cashier: <span class="key">?</span> repeat that · <span class="key">O</span> got it
+  <span class="key">1</span>–<span class="key">5</span> or click a bin to add · <span class="key">ENTER</span> onto the window sill · <span class="key">⌫</span> trash<br>
+  Tell the cashier: <span class="key">O</span> got it · <span class="key">?</span> again · <span class="key">B</span> book · <span class="key">M</span> mute
 </div>
 <div id="flash"></div>
 <div id="lobby" class="overlay">
   <h1>🔪 CHEF BEAR</h1>
-  <h2 id="lobbyMsg">You have the ingredients. You can't hear anything.</h2>
-  <p>The cashier bear stands at the window behind you and signs the order with their paws. Press <b>SPACE</b> to turn around and watch, then turn back and build the döner. Watch out for the strobe! When they signal 🛎️ Serve!, press ENTER.</p>
+  <h2 id="lobbyMsg">TechnoDöner · Original. You have the book and the ingredients. You can't hear a thing.</h2>
+  <p>You never see the customers. The cashier bear stands in your window and copies each regular's dance. Find the dance in your 📖 book of regulars (STAMMKUNDEN), cook their usual from the bins, and press ENTER to put it on the window sill: the cashier hands it over. Watch out for the strobe!</p>
+  <div id="lobbyLevel">Difficulty: 🙂 Normal <small style="color:#aaa">(the cashier picks)</small></div>
   <button class="big" id="startBtn">START ROUND 🔊</button>
   <div id="qr" title="Scan to open this page on a phone"></div>
 </div>
@@ -45,103 +69,134 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { connect, send, audio, whyHtml, showFlash, makeBear, resetPose, makeClub, makeRenderer, fitCamera, mat, glow, textSprite, GESTURES, GESTURE_BY_ID, GESTURE_SECONDS, INGREDIENTS, ING_HEIGHT, ingredientMesh, ingLabel } from './common.js';
+import { connect, send, audio, whyHtml, showFlash, makeBear, resetPose, makeClub, makeRenderer, mat, glow, textSprite, INGREDIENTS, ingredientMesh, ingLabel,
+  loadRules, rulesNow, levelInfo, updateTopbar, setupMute, stackDoner, makePlateMesh, POSES, applyPose, danceFor, poseIcon } from './common.js';
 
 const $ = (id) => document.getElementById(id);
+setupMute($('muteBtn'));
 const renderer = makeRenderer();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 100);
-camera.position.set(0, 1.75, 0);
-fitCamera(renderer, camera);
+const CAM_BASE = new THREE.Vector3(0, 1.95, 0.7);
+// the book covers the left of the screen: shift the picture so the window sits in the middle of what is left, and
+// step back (and widen a little) until the whole counter, bins 1–5, fits in that space
+function fit() {
+  const bookW = $('book').classList.contains('open') && innerWidth > 700 ? $('book').offsetWidth : 0;
+  document.documentElement.style.setProperty('--bookOpen', bookW + 'px');
+  renderer.setSize(innerWidth, innerHeight);
+  const free = Math.max(200, innerWidth - bookW) / innerHeight;
+  camera.fov = Math.min(72, Math.max(60, 2 * Math.atan(0.85 / free) * 180 / Math.PI));
+  const half = Math.atan(Math.tan(camera.fov * Math.PI / 360) * free); // horizontal half-angle of the free space
+  CAM_BASE.z = Math.min(2.2, Math.max(0.7, -1.12 + 1.6 / Math.tan(half)));
+  camera.position.copy(CAM_BASE); camera.lookAt(0, 1.35, -2.5);
+  camera.aspect = (innerWidth + bookW) / innerHeight;
+  camera.setViewOffset(innerWidth + bookW, innerHeight, 0, 0, innerWidth, innerHeight);
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', fit);
 const club = makeClub(scene, { floorZ: -9, crowdCount: 14 });
 
 // ---------- kitchen room ----------
 const wallM = mat('#3a2a2a'), tileM = mat('#d8d8d0', { roughness: 0.5 });
 const kfloor = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), mat('#555048')); kfloor.rotation.x = -Math.PI / 2; kfloor.position.set(0, 0.01, 0); kfloor.receiveShadow = true; scene.add(kfloor);
-// front wall (toward club) with window hole x∈[-1.2,1.2], y∈[1.0,2.5]
-const W = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.15), wallM); m.position.set(x, y, -2.5); scene.add(m); };
+// front wall (toward club) with window hole x∈[-1.2,1.2], y∈[1.0,2.5]; one group so it can rattle
+const frame = new THREE.Group(); scene.add(frame);
+const W = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.15), wallM); m.position.set(x, y, -2.5); frame.add(m); };
 W(1.8, 3.5, -2.1, 1.75); W(1.8, 3.5, 2.1, 1.75); W(2.4, 1.0, 0, 0.5); W(2.4, 1.0, 0, 3.0);
-const sill = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.5), mat('#999', { metalness: 0.8, roughness: 0.3 })); sill.position.set(0, 1.02, -2.5); scene.add(sill);
-const winNeon = new THREE.Mesh(new THREE.TorusGeometry(1, 0.025, 6, 40), glow('#ff00aa')); winNeon.scale.set(1.25, 0.8, 1); winNeon.position.set(0, 1.75, -2.4); scene.add(winNeon);
+const sill = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.5), mat('#999', { metalness: 0.8, roughness: 0.3 })); sill.position.set(0, 1.02, -2.5); frame.add(sill);
+const winNeon = new THREE.Mesh(new THREE.TorusGeometry(1, 0.025, 6, 40), glow('#ff00aa')); winNeon.scale.set(1.25, 0.8, 1); winNeon.position.set(0, 1.75, -2.4); frame.add(winNeon);
+const sign = textSprite('CASHIER', { size: 44, color: '#ffb238', scale: 0.8, depthTest: true }); sign.position.set(0, 2.72, -2.4); frame.add(sign);
+// the served döner waits on the sill until the cashier takes it
+const sillDoner = new THREE.Group(); sillDoner.position.set(-0.33, 1.07, -2.4); sillDoner.scale.setScalar(1.3); // between the bin labels sillDoner.visible = false; frame.add(sillDoner);
+const sillPlate = makePlateMesh(); sillPlate.scale.setScalar(0.6); sillDoner.add(sillPlate);
+const sillStack = new THREE.Group(); sillStack.position.y = 0.03; sillStack.scale.setScalar(0.6); sillDoner.add(sillStack);
 // side + back walls (tiled)
 for (const s of [-1, 1]) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.5, 5.2), tileM); m.position.set(s * 3, 1.75, 0); scene.add(m); }
 const back = new THREE.Mesh(new THREE.BoxGeometry(6, 3.5, 0.15), tileM); back.position.set(0, 1.75, 2.6); scene.add(back);
 const ceil = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 5.2), mat('#222')); ceil.position.set(0, 3.5, 0); scene.add(ceil);
-const kLight = new THREE.PointLight('#fff1d6', 25, 8, 1.2); kLight.position.set(0, 3.2, 1); kLight.castShadow = true; scene.add(kLight);
-const sideFridge = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.2, 1), mat('#bbb', { metalness: 0.6 })); sideFridge.position.set(-2.5, 1.1, 0); scene.add(sideFridge);
-const poster = textSprite('NO TALKING · ONLY PAWS', { size: 50, color: '#ffd600', scale: 1.4 }); poster.position.set(2.9, 2.2, 0); scene.add(poster);
+const kLight = new THREE.PointLight('#fff1d6', 25, 8, 1.2); kLight.position.set(0, 3.2, 0.2); kLight.castShadow = true; scene.add(kLight);
+const poster = textSprite('NO TALKING · ONLY PAWS', { size: 50, color: '#ffd600', scale: 1.4 }); poster.position.set(2.9, 2.4, -0.6); scene.add(poster);
 
-// prep table (behind the chef, +z)
-const table = new THREE.Mesh(new THREE.BoxGeometry(4, 0.08, 1.2), mat('#aaa', { metalness: 0.8, roughness: 0.25 })); table.position.set(0, 1.0, 1.7); table.receiveShadow = true; scene.add(table);
-const tableBody = new THREE.Mesh(new THREE.BoxGeometry(4, 0.96, 1.2), mat('#666', { metalness: 0.5 })); tableBody.position.set(0, 0.48, 1.7); scene.add(tableBody);
-
-// bins
+// prep counter between you and the window: bins in front, plate behind them, so you can watch and cook at once
+const table = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.08, 0.95), mat('#aaa', { metalness: 0.8, roughness: 0.25 })); table.position.set(0, 1.0, -1.45); table.receiveShadow = true; scene.add(table);
+const tableBody = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.96, 0.95), mat('#666', { metalness: 0.5 })); tableBody.position.set(0, 0.48, -1.45); scene.add(tableBody);
 const bins = [];
 INGREDIENTS.forEach((ing, i) => {
-  const x = 1.4 - i * 0.7; // mirrored: chef looks toward +z, so +x is on their left
-  const tray = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.35), mat('#333')); tray.position.set(x, 1.09, 2.05); tray.userData.ing = ing.id; scene.add(tray);
-  const food = ingredientMesh(ing.id); food.position.set(x, 1.16, 2.05); food.scale.setScalar(0.6); food.traverse((o) => (o.userData.ing = ing.id)); scene.add(food);
-  const label = textSprite(`${i + 1} ${ing.label}`, { size: 44, scale: 0.36 }); label.position.set(x, 1.32, 2.2); scene.add(label);
+  const x = -1.3 + i * 0.65;
+  const tray = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.32), mat('#333')); tray.position.set(x, 1.09, -1.12); tray.userData.ing = ing.id; scene.add(tray);
+  const food = ingredientMesh(ing.id); food.position.set(x, 1.16, -1.12); food.scale.setScalar(0.6); food.traverse((o) => (o.userData.ing = ing.id)); scene.add(food);
+  const label = textSprite(`${i + 1} ${ing.label}`, { size: 44, scale: 0.36 }); label.position.set(x, 1.33, -1.0); scene.add(label);
   bins.push({ tray, food, ing: ing.id });
 });
-const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.38, 0.04, 28), mat('#fafafa')); plate.position.set(0, 1.06, 1.45); scene.add(plate);
-const plateStack = new THREE.Group(); plateStack.position.set(0, 1.09, 1.45); scene.add(plateStack);
+const plate = makePlateMesh(); plate.position.set(0.32, 1.06, -1.68); scene.add(plate);
+const plateStack = new THREE.Group(); plateStack.position.set(0.32, 1.09, -1.68); scene.add(plateStack);
 
-// döner spit (decor, on the table's left end)
-const spit = new THREE.Group(); spit.position.set(1.8, 1.04, 2.4);
+// döner spit (decor, on a side shelf out of the window's way)
+const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.8), mat('#666', { metalness: 0.5 })); shelf.position.set(2.4, 0.5, -1.6); scene.add(shelf);
+const spit = new THREE.Group(); spit.position.set(2.4, 1.0, -1.6);
 const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.14, 0.75, 16), mat('#8a4a22')); cone.position.y = 0.42; spit.add(cone);
 const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.0), mat('#ccc', { metalness: 1 })); rod.position.y = 0.5; spit.add(rod);
 const heater = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.7, 0.3), glow('#ff5722')); heater.position.set(0.35, 0.42, 0); spit.add(heater);
 scene.add(spit);
 
-// ---------- cashier bear in the window ----------
+// ---------- the cashier bear in the window, lit by the club ----------
 const cashier = makeBear({ fur: '#a0522d', shirt: '#e63946', hat: 'cap', apron: true });
-cashier.group.position.set(0, 0.35, -3.7); scene.add(cashier.group);
+cashier.group.scale.setScalar(0.85); cashier.group.position.set(0, 0.45, -3.7); scene.add(cashier.group);
 const cashierCounter = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.9, 0.5), mat('#2a1a10')); cashierCounter.position.set(0, 0.45, -2.85); scene.add(cashierCounter);
-const strobe = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), new THREE.MeshBasicMaterial({ color: '#fff' })); strobe.position.set(0, 1.75, -2.44); strobe.visible = false; scene.add(strobe);
+const clubLight = new THREE.PointLight('#ff4fa8', 6, 4, 1.2); clubLight.position.set(-0.6, 2.4, -3.0); scene.add(clubLight);
+const front = new THREE.SpotLight('#ffffff', 14, 5, 0.6, 0.6); front.position.set(0, 2.2, -2.0); front.target.position.set(0, 1.5, -3.7); scene.add(front, front.target);
+const strobe = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), new THREE.MeshBasicMaterial({ color: '#fff' })); strobe.position.set(0, 1.75, -2.44); strobe.visible = false; frame.add(strobe);
+let pose = null; // the latest relayed pose of the cashier
 
-// ---------- gesture queue ----------
-const gq = []; let gCur = null, gStart = 0;
-function updateGesture(now, beat) {
-  if (gCur && now - gStart > GESTURE_SECONDS + 0.3) gCur = null;
-  if (!gCur && gq.length) { gCur = gq.shift(); gStart = now; }
-  resetPose(cashier); cashier.group.position.y = 0.35;
-  const t = now - gStart;
-  if (gCur && t < GESTURE_SECONDS) GESTURE_BY_ID[gCur].anim(t, cashier);
-  else { cashier.head.rotation.x = Math.abs(Math.sin(beat * Math.PI)) * 0.2; cashier.group.position.y = 0.35 + Math.abs(Math.sin(beat * Math.PI)) * 0.03; }
+// ---------- the book of regulars ----------
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let bookKey = '';
+function renderBook() {
+  const r = rulesNow(); if (!r || !r.regulars) return;
+  const L = levelInfo(state ? state.level : 'normal');
+  const key = `${L.id}|${r.regulars.length}|${r.bookTitle}`;
+  if (key === bookKey) return; bookKey = key;
+  const icon = (k) => `<img src="${poseIcon(k, '#3a2010')}" alt="${POSES[k].name}" title="${POSES[k].name}">`;
+  $('book').innerHTML = `
+    <h2>📖 ${esc(r.bookTitle || 'STAMMKUNDEN')}</h2>
+    <p class="intro">${esc(r.bookIntro || '')} <b>${esc(L.emoji)} ${esc(L.label)}: ${L.danceLen} moves.</b></p>
+    <div class="legend">${['U', 'L', 'R', 'C', 'H', 'N', 'W'].map((k) => `<span>${icon(k)}${esc(POSES[k].name)}</span>`).join('')}</div>
+    ${r.regulars.map((R) => {
+      const O = r.orders[R.order] || { name: '?', items: [] }, look = R.look || {};
+      return `<div class="reg">
+        <div class="face" style="background:${esc(look.fur || '#8b5a2b')};border-color:${esc(look.shirt || '#333')}">${esc(look.emoji || '🐻')}</div>
+        <div class="nm">${esc(R.name)} <small>${esc(O.name)}</small></div>
+        <div class="row2"><span class="dance">${[...danceFor(R, L.danceLen)].map(icon).join('')}</span><span class="usual" title="${esc(O.items.map(ingLabel).join(', '))}">${O.items.map((i) => ingLabel(i).split(' ')[0]).join('')}</span></div>
+      </div>`;
+    }).join('')}`;
 }
-
-// ---------- camera turning ----------
-let facing = 1; // 0 = window (-z), 1 = table (+z)
-let yaw = Math.PI;
-function turn() { facing = 1 - facing; send('look', { facing }); }
-function updateCamera(dt) {
-  const target = facing ? Math.PI : 0;
-  yaw += (target - yaw) * Math.min(1, dt * 9);
-  const k = yaw / Math.PI; // 0 window → 1 table
-  const pitch = -0.04 + (-0.5 + 0.04) * k;
-  const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
-  camera.position.z = -0.6 * k; camera.position.y = 1.75 + 0.25 * k;
-  camera.lookAt(camera.position.clone().add(dir));
-}
+function toggleBook() { $('book').classList.toggle('open'); fit(); }
+$('bookBtn').onclick = (e) => { e.currentTarget.blur(); toggleBook(); };
+loadRules().then(renderBook);
 
 // ---------- input ----------
+const signal = (id) => send('signal', { id });
 addEventListener('keydown', (e) => {
-  if (e.repeat) return;
-  if (e.code === 'Space') { e.preventDefault(); turn(); }
-  else if (e.key >= '1' && e.key <= '5') addIng(INGREDIENTS[+e.key - 1].id);
-  else if (e.key === 'Enter') send('serve');
+  if (e.repeat || e.metaKey || e.ctrlKey) return;
+  if (e.key >= '1' && e.key <= '5') addIng(INGREDIENTS[+e.key - 1].id);
+  else if (e.key === 'Enter') serve();
   else if (e.key === 'Backspace') send('trash');
-  else if (e.key === '?' || e.key === '/') send('signal', { id: 'confused' });
-  else if (e.key.toLowerCase() === 'o') send('signal', { id: 'ok' });
-  else if (e.key.toLowerCase() === 'g') $('cheat').classList.toggle('open');
+  else if (e.key === '?' || e.key === '/') signal('confused');
+  else if (e.key.toLowerCase() === 'o') signal('ok');
+  else if (e.key.toLowerCase() === 'b') toggleBook();
 });
-$('turnBtn').onclick = turn;
-$('serveBtn').onclick = () => send('serve');
+$('okBtn').onclick = (e) => { e.currentTarget.blur(); signal('ok'); };
+$('confBtn').onclick = (e) => { e.currentTarget.blur(); signal('confused'); };
+$('serveBtn').onclick = serve;
 $('trashBtn').onclick = () => send('trash');
-$('cheatBtn').onclick = () => $('cheat').classList.add('open');
-$('cheat').onclick = () => $('cheat').classList.remove('open');
-$('cheat').innerHTML = '<b>🤲 Gesture guide</b> (click to hide)<br>' + GESTURES.map((g) => `${g.emoji} <b>${g.label}</b>: ${g.hint}`).join('<br>');
+function toast(text) { const t = $('toast'); t.textContent = text; t.style.opacity = 1; clearTimeout(t.t); t.t = setTimeout(() => (t.style.opacity = 0), 1800); }
+function serve() {
+  if (!state || state.phase !== 'playing') return;
+  if (state.sill || state.carry) return toast('🥙 One döner at a time: the cashier still has to hand it over');
+  // an add may still be on its way (keys pressed fast): then let the server decide
+  if (!state.plate.length && performance.now() - lastAddAt > 800) return toast('🍽️ The plate is empty');
+  send('serve');
+}
 
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
 renderer.domElement.addEventListener('pointerdown', (e) => {
@@ -149,55 +204,58 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   ray.setFromCamera(mouse, camera);
   const hit = ray.intersectObjects(bins.flatMap((b) => [b.tray, b.food]), true).find((h) => h.object.userData.ing);
   if (hit) addIng(hit.object.userData.ing);
+  else if (ray.intersectObjects([plate, plateStack], true).length) serve();
 });
+const PLATE_MAX = 12; // the worker's cap
+let lastAddAt = -1e9;
 function addIng(id) {
-  if (facing !== 1) return; // you have to be looking at the table
-  send('add', { ing: id });
+  if (!state || state.phase !== 'playing') return;
+  if (state.plate.length >= PLATE_MAX) return toast('🍽️ The plate is full'); // fix (from the port): used to fail silently
+  send('add', { ing: id }); lastAddAt = performance.now();
   const b = bins.find((b) => b.ing === id); b.pop = 1;
 }
 
 // ---------- plate rendering ----------
-let plateKey = '';
-function renderPlate(items) {
+let plateKey = '', sillKey = '';
+function renderPlate(items, sillItems, carried) {
   const key = items.join(',');
-  if (key === plateKey) return; plateKey = key;
-  plateStack.clear();
-  // bread always goes at the bottom, everything else stacks on top in the order added
-  const sorted = [...items.filter((i) => i === 'bread'), ...items.filter((i) => i !== 'bread')];
-  let y = 0;
-  sorted.forEach((id, i) => { const m = ingredientMesh(id); m.position.y = y; m.rotation.y = i * 0.7; plateStack.add(m); y += ING_HEIGHT[id]; });
-  $('plateList').textContent = items.length ? items.map(ingLabel).join(' ') : 'Plate: empty';
+  if (key !== plateKey) {
+    plateKey = key;
+    stackDoner(plateStack, items); // bread always goes at the bottom, everything else stacks on top in the order added
+    $('plateList').textContent = items.length ? items.map(ingLabel).join(' ') : 'Plate: empty';
+  }
+  const sk = sillItems ? sillItems.join(',') : '';
+  if (sk !== sillKey) { sillKey = sk; stackDoner(sillStack, sillItems || []); sillDoner.visible = !!sillItems; }
+  $('sillMsg').textContent = sillItems ? '🥙 on the sill: waiting for the cashier' : carried ? '🥙 the cashier is handing it over' : '';
+  $('serveBtn').disabled = !!(sillItems || carried);
 }
 
 // ---------- network ----------
 let state = null, strobeUntil = 0;
-send('look', { facing }); // sync on load
 connect((m) => {
   if (m.type === 'state') {
     state = m.state;
-    $('clock').textContent = state.clock;
-    $('time').textContent = Math.ceil(state.timeLeft);
-    $('score').textContent = state.score;
-    $('served').textContent = state.served;
-    const c = state.customer;
-    $('patience').firstElementChild.style.width = c ? `${(c.patience / c.maxPatience) * 100}%` : '0%';
-    renderPlate(state.plate);
+    updateTopbar(state);
+    renderPlate(state.plate, state.sill, state.carry);
+    renderBook();
+    const L = levelInfo(state.level);
+    $('lobbyLevel').firstChild.textContent = `Difficulty: ${L.emoji} ${L.label} `;
     if (state.phase === 'over') { $('lobby').style.display = 'flex'; $('lobbyMsg').textContent = `Round over! Score ${state.score} · ${state.served} served · ${state.failed} failed`; $('startBtn').textContent = 'PLAY AGAIN 🔊'; }
+    if (state.phase === 'playing' && !audio.ctx) $('startBtn').textContent = 'JOIN THE ROUND 🔊';
     if (state.phase === 'playing' && audio.ctx) $('lobby').style.display = 'none';
   }
-  if (m.type === 'gesture') gq.push(m.id);
+  if (m.type === 'pose' && Array.isArray(m.v) && m.v.length === 15) pose = m.v;
   if (m.type === 'strobe') strobeUntil = performance.now() / 1000 + m.duration;
   if (m.type === 'result') showResult(m);
+  if (m.type === 'started') { audio.restartSong(); loadRules(true).then(() => { bookKey = ''; renderBook(); }); }
 });
 
 function showResult(m) {
   audio.blip(m.ok);
   const f = $('flash');
   f.style.background = m.ok ? '#00e67655' : '#ff174455';
-  f.innerHTML = `${m.ok ? '✅ PERFECT' : '❌ ' + m.reason} ${m.delta > 0 ? '+' : ''}${m.delta}` +
-    (m.ok ? '' : whyHtml(m));
+  f.innerHTML = `${m.ok ? `✅ ${m.name}: PERFECT` : m.reason === 'Wrong döner' ? '❌ Wrong döner' : `❌ ${m.name} ${m.reason}`} ${m.delta > 0 ? '+' : ''}${m.delta}` + (m.ok ? '' : whyHtml(m));
   showFlash(f, m.ok);
-  gq.length = 0; gCur = null;
 }
 
 $('startBtn').onclick = () => {
@@ -206,16 +264,35 @@ $('startBtn').onclick = () => {
   $('lobby').style.display = 'none';
 };
 
+// ---------- urgency: someone bangs on the counter (regular at 30 s or less; the chef gets no number) ----------
+let nextBang = 0, rattle = 0;
+function updateUrgency(now, dt) {
+  const c = state && state.phase === 'playing' && state.customer;
+  if (c && c.patience <= 30) {
+    if (!nextBang) nextBang = now + 0.6;
+    if (now >= nextBang) { rattle = 1; audio.knock(); nextBang = now + 2 + Math.random(); }
+  } else nextBang = 0;
+  rattle = Math.max(0, rattle - dt * 3.5);
+  const r = rattle * rattle, j = () => Math.random() - 0.5;
+  frame.position.set(j() * 0.035 * r, j() * 0.02 * r, j() * 0.02 * r);
+  frame.rotation.z = j() * 0.008 * r;
+  camera.position.set(CAM_BASE.x + j() * 0.012 * r, CAM_BASE.y + j() * 0.01 * r, CAM_BASE.z);
+}
+
 // ---------- loop ----------
+fit();
 let last = performance.now() / 1000;
 renderer.setAnimationLoop(() => {
-  const now = performance.now() / 1000, dt = now - last; last = now;
-  const beat = audio.beat();
+  const now = performance.now() / 1000, dt = Math.min(0.1, now - last); last = now;
+  const beat = audio.beat(), pulse = Math.pow(1 - (beat % 1), 2);
   club.update(beat, now);
-  updateGesture(now, beat);
-  updateCamera(dt);
+  resetPose(cashier);
+  applyPose(cashier, pose || POSES.I.v, Math.min(1, dt * 10));
+  cashier.group.position.y = 0.45 + Math.abs(Math.sin(beat * Math.PI)) * 0.025;
+  updateUrgency(now, dt);
   spit.rotation.y += dt * 1.2;
   winNeon.material.color.setHSL((now * 0.15) % 1, 1, 0.55);
+  clubLight.intensity = 2 + 10 * pulse; clubLight.color.setHSL((now * 0.07) % 1, 1, 0.6);
   bins.forEach((b) => { b.pop = Math.max(0, (b.pop || 0) - dt * 4); b.food.position.y = 1.16 + b.pop * 0.15; });
   const strobing = now < strobeUntil;
   strobe.visible = strobing && Math.floor(now * 12) % 3 !== 0;
