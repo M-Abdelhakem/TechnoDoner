@@ -1,0 +1,16 @@
+{
+  "settings": { "roundSeconds": 240, "patienceSeconds": 100 },
+  "manualTitle": "DÖNER BEARS Handbook",
+  "manualIntro": "Every döner starts with the BASE. Then look at the customer and apply EVERY rule that matches.",
+  "orders": [
+    { "name": "Döner", "says": "", "ingredients": ["bread", "meat", "lettuce", "tomato"] }
+  ],
+  "rules": [
+    { "when": { "trait": "sunglasses", "equals": true }, "effect": { "add": ["meat"] }, "text": "🕶️ Sunglasses → +1 Meat" },
+    { "when": { "trait": "glitter", "equals": true }, "effect": { "remove": ["tomato"] }, "text": "✨ Glitter on face → NO Tomato" },
+    { "when": { "trait": "bucketHat", "equals": true }, "effect": { "add": ["onion", "onion"] }, "text": "👒 Bucket hat → +2 Onion" },
+    { "when": { "trait": "wristband", "equals": true }, "effect": { "remove": ["lettuce"] }, "text": "🔴 Red wristband → NO Lettuce" },
+    { "when": { "trait": "drunk", "equals": true }, "effect": { "add": ["bread"] }, "text": "🥴 Swaying (drunk) → +1 Bread" },
+    { "when": { "trait": "outfit", "equals": "neon" }, "effect": { "add": ["onion"] }, "text": "💚 Neon outfit → +1 Onion" }
+  ]
+}

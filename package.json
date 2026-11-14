@@ -1,0 +1,8 @@
+{
+  "name": "technodoner",
+  "version": "1.0.0",
+  "description": "Two bears, one döner, a Berlin techno club too loud to talk. A 2-player communication game.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "license": "MIT"
+}

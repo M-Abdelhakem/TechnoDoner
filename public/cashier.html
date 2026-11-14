@@ -1,0 +1,294 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Döner Bears · Cashier</title><link rel="stylesheet" href="/style.css">
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+<style>
+  #pad { bottom: 12px; left: 50%; transform: translateX(-50%); background: #000c; padding: 10px 12px; border-radius: 16px; border: 1px solid #ff00aa66; width: min(640px, 96vw); }
+  #pad .title { font-size: 13px; color: #ccc; margin: 2px 0 6px; }
+  #pad .title b { color: #ff00aa; }
+  #pad .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px; }
+  #pad .row.ctrl { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
+  #pad button { font-size: 15px; font-weight: 800; padding: 6px 4px; border-radius: 10px; border: 2px solid #7c4dff; background: #1a0d24; color: #fff; cursor: pointer; line-height: 1.2; }
+  #pad .ctrl button { border-color: #00e5ff; }
+  #pad button .em { font-size: 24px; display: block; }
+  #pad button .hint { display: block; font-size: 10px; font-weight: 500; color: #bbb; margin-top: 2px; }
+  #pad button.on { background: #ff00aa; border-color: #fff; transform: scale(.95); }
+  #turnMsg { bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 900; background: #00e5ff; color: #000; padding: 14px 26px; border-radius: 14px; box-shadow: 0 0 30px #00e5ff; cursor: pointer; }
+  #queue { bottom: 300px; left: 50%; transform: translateX(-50%); font-size: 18px; background: #000a; border-radius: 12px; padding: 6px 14px; text-align: center; }
+  #queue:empty { display: none; }
+  #queue .now { filter: drop-shadow(0 0 6px #ff00aa); font-size: 30px; }
+  #watching { top: 70px; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: 900; padding: 8px 18px; border-radius: 12px; background: #000c; }
+  #topBtns { top: 70px; right: 16px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  #topBtns button { font-size: 17px; font-weight: 900; padding: 10px 16px; border-radius: 12px; border: 0; cursor: pointer; }
+  #manualBtn { background: #ffd600; color: #111; box-shadow: 0 0 20px #ffd60088; }
+  #turnBtn { background: #00e5ff; color: #000; }
+  #helpBtn { background: #7c4dff; color: #fff; }
+  #manual { position: fixed; z-index: 12; top: 0; right: 0; bottom: 0; width: min(480px, 100%); background: #f4ead5; color: #222; padding: 24px 28px; overflow-y: auto; font-family: Georgia, serif; box-shadow: -10px 0 40px #000; transform: translateX(105%); transition: transform .2s; }
+  #manual.open { transform: none; }
+  #manual h2 { margin: 0 0 8px; font-size: 26px; }
+  #manual .intro { color: #444; font-size: 16px; }
+  #manual .base { background: #222; color: #fff; padding: 12px 14px; border-radius: 8px; font-size: 20px; font-family: system-ui, sans-serif; font-weight: 700; }
+  #manual .rule { background: #fff; border-left: 6px solid #ff00aa; padding: 10px 14px; margin: 8px 0; border-radius: 6px; font-size: 22px; font-family: system-ui, sans-serif; font-weight: 700; }
+  #signal { top: 35%; left: 50%; transform: translateX(-50%); font-size: 36px; font-weight: 900; opacity: 0; transition: opacity .2s; background: #000c; border: 3px solid #00e5ff; padding: 12px 24px; border-radius: 16px; box-shadow: 0 0 30px #00e5ff; pointer-events: none; }
+  .steps { text-align: left; max-width: 680px; background: #1a0d24; border: 2px solid #7c4dff; border-radius: 16px; padding: 14px 22px 14px 40px; line-height: 1.6; font-size: 17px; margin: 0; }
+  .steps li { margin: 4px 0; }
+  #help.overlay { display: none; }
+</style></head>
+<body>
+<div id="topbar" class="hud"><span>🕒 <b id="clock">02:00</b></span><span>⏳ <b id="time">0</b>s</span><span>⭐ <b id="score">0</b></span><span>🥙 <b id="served">0</b></span></div>
+<div id="patience" class="hud"><div></div></div>
+<div id="watching" class="hud" hidden></div>
+<div id="topBtns" class="hud">
+  <button id="manualBtn">📖 Rule book <span class="key">TAB</span></button>
+  <button id="turnBtn">🔄 Turn around <span class="key">SPACE</span></button>
+  <button id="helpBtn">❔ How to play <span class="key">H</span></button>
+</div>
+<div id="queue" class="hud"></div>
+<div id="pad" class="hud" hidden></div>
+<div id="turnMsg" class="hud">🔄 Turn around to sign to the chef <span class="key">SPACE</span></div>
+<div id="signal" class="hud"></div>
+<div id="manual"></div>
+<div id="flash"></div>
+<template id="stepsTpl">
+  <ol class="steps">
+    <li>👀 <b>Look at the customer</b>: sunglasses? glitter? bucket hat? red wristband? swaying? neon outfit?</li>
+    <li>📖 <b>Open the rule book</b> (TAB). Start with the BASE döner, then apply every rule that matches.</li>
+    <li>🧠 <b>Memorize the döner</b>, then <b>turn around</b> (SPACE). You can't see the customer or the book while you're turned around!</li>
+    <li>🐾 <b>Sign each ingredient</b> through the kitchen window. <b>One tap = one portion</b> (2 onions = tap Onion twice). Only sign while the chef is looking at you!</li>
+    <li>🛎️ Finish with <b>Serve!</b> If you signed something wrong, use <b>Start over</b> and sign it all again.</li>
+  </ol>
+  <p>The chef bear can answer: 🙌 arms up = <b>"got it"</b> · 🤷 shrug = <b>"I missed that, repeat it"</b>.</p>
+</template>
+<div id="help" class="overlay"><h2>❔ How to play: Cashier</h2><div class="stepsSlot"></div><button class="big" id="helpClose">GOT IT</button></div>
+<div id="lobby" class="overlay">
+  <h1>🧾 CASHIER BEAR</h1>
+  <h2 id="lobbyMsg">You see the customer. You have the rule book.</h2>
+  <div class="stepsSlot"></div>
+  <button class="big" id="startBtn">START ROUND 🔊</button>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { connect, send, audio, whyHtml, showFlash, makeBear, resetPose, makeClub, makeRenderer, fitCamera, mat, glow, textSprite, GESTURES, GESTURE_BY_ID, GESTURE_SECONDS, CHEF_SIGNALS, ingLabel } from '/common.js';
+
+const $ = (id) => document.getElementById(id);
+document.querySelectorAll('.stepsSlot').forEach((el) => el.appendChild($('stepsTpl').content.cloneNode(true)));
+
+const renderer = makeRenderer();
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 2.0, 3.9);
+fitCamera(renderer, camera);
+const club = makeClub(scene, { floorZ: -9, crowdCount: 14 });
+
+// front counter (customer side, -z)
+const counter = new THREE.Mesh(new THREE.BoxGeometry(5, 1.1, 0.8), mat('#2a1a10')); counter.position.set(0, 0.55, 1.6); scene.add(counter);
+const counterTop = new THREE.Mesh(new THREE.BoxGeometry(5.1, 0.08, 0.9), mat('#888', { metalness: 0.8, roughness: 0.3 })); counterTop.position.set(0, 1.12, 1.6); scene.add(counterTop);
+const neon = new THREE.Mesh(new THREE.BoxGeometry(5, 0.05, 0.05), glow('#00e5ff')); neon.position.set(0, 1.0, 2.01); scene.add(neon);
+const spot = new THREE.SpotLight('#fff1d6', 60, 10, 0.6, 0.5); spot.position.set(0, 4.5, 2.5); spot.target.position.set(0, 1, 0.5); scene.add(spot, spot.target);
+
+// kitchen behind the cashier (+z): wall with a window, chef bear at the prep table
+const KZ = 5.3;
+const wallM = mat('#3a2a2a');
+const W = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.15), wallM); m.position.set(x, y, KZ); scene.add(m); };
+W(3, 3.5, -2.7, 1.75); W(3, 3.5, 2.7, 1.75); W(2.4, 1.0, 0, 0.5); W(2.4, 1.0, 0, 3.0);
+const sill = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 0.5), mat('#999', { metalness: 0.8, roughness: 0.3 })); sill.position.set(0, 1.02, KZ); scene.add(sill);
+const winNeon = new THREE.Mesh(new THREE.TorusGeometry(1, 0.025, 6, 40), glow('#ff00aa')); winNeon.scale.set(1.25, 0.8, 1); winNeon.position.set(0, 1.75, KZ - 0.1); scene.add(winNeon);
+const kitchenSign = textSprite('KITCHEN', { size: 50, color: '#ffd600', scale: 1.2, depthTest: true }); kitchenSign.position.set(0, 2.75, KZ - 0.12); scene.add(kitchenSign);
+const kRoom = new THREE.Mesh(new THREE.BoxGeometry(6, 3.5, 5), new THREE.MeshStandardMaterial({ color: '#d8d8d0', side: THREE.BackSide })); kRoom.position.set(0, 1.75, KZ + 2.55); scene.add(kRoom);
+const kLight = new THREE.PointLight('#fff1d6', 20, 8, 1.2); kLight.position.set(0, 3.0, KZ + 2.0); scene.add(kLight);
+const kTable = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 0.9), mat('#999', { metalness: 0.6, roughness: 0.3 })); kTable.position.set(0, 0.5, KZ + 3.4); scene.add(kTable);
+const chef = makeBear({ fur: '#6d4c41', apron: true, hat: 'chef' });
+chef.group.position.set(0, 0.2, KZ + 2.5); scene.add(chef.group);
+let chefFacing = 1, chefYaw = 0, chefSignal = null, chefSignalStart = 0; // chefFacing: 1 = at table (back to us), 0 = at window
+
+// ---------- customer ----------
+let customer = null, customerId = null, customerEnter = 0;
+function buildCustomer(c) {
+  if (customer) scene.remove(customer.group);
+  const t = c.traits;
+  const shirt = { black: '#151515', neon: '#39ff14', white: '#f2f2f2' }[t.outfit];
+  const b = makeBear({ fur: c.fur, shirt });
+  if (t.outfit === 'neon') b.body.material = new THREE.MeshStandardMaterial({ color: shirt, emissive: shirt, emissiveIntensity: 0.6 });
+  if (t.sunglasses) {
+    const g = new THREE.Group();
+    for (const s of [-1, 1]) { const lens = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.04), mat('#000', { metalness: 1, roughness: 0.1 })); lens.position.set(s * 0.15, 0.08, 0.41); g.add(lens); }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.03), mat('#000')); bridge.position.set(0, 0.11, 0.41); g.add(bridge);
+    b.head.add(g);
+  }
+  if (t.glitter) {
+    const pts = new THREE.BufferGeometry(), arr = [];
+    for (let i = 0; i < 70; i++) { const a = Math.random() * Math.PI * 2, r = 0.15 + Math.random() * 0.2; arr.push(Math.cos(a) * r, -0.05 + Math.sin(a) * 0.12, 0.36 + Math.random() * 0.06); }
+    pts.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+    b.glitter = new THREE.Points(pts, new THREE.PointsMaterial({ color: '#ff9cf5', size: 0.05 }));
+    b.head.add(b.glitter);
+  }
+  if (t.wristband) {
+    const w = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.04, 8, 16), glow('#ff1744')); w.rotation.x = Math.PI / 2; w.position.y = -0.5; b.armP.add(w);
+  }
+  if (t.bucketHat) {
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.3, 18), mat('#e0c341')); crown.position.y = 0.3; b.head.add(crown);
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.03, 24), mat('#e0c341')); brim.position.y = 0.18; b.head.add(brim);
+  }
+  b.drunk = t.drunk;
+  b.group.position.set(-6, 0, 0.5);
+  scene.add(b.group);
+  return b;
+}
+
+// ---------- turning ----------
+let facing = 0; // 0 = customer (-z), 1 = kitchen (+z)
+let yaw = 0;
+function turn() {
+  facing = 1 - facing;
+  if (facing) $('manual').classList.remove('open');
+}
+function updateCamera(dt) {
+  yaw += ((facing ? Math.PI : 0) - yaw) * Math.min(1, dt * 9);
+  const k = yaw / Math.PI;
+  const pitch = -0.23 + 0.18 * k;
+  const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
+  camera.lookAt(camera.position.clone().add(dir));
+  const atKitchen = k > 0.85;
+  $('pad').hidden = !atKitchen;
+  $('turnMsg').hidden = atKitchen;
+  $('watching').hidden = !atKitchen;
+  $('manualBtn').disabled = atKitchen; $('manualBtn').style.opacity = atKitchen ? 0.35 : 1;
+}
+
+// ---------- gestures pad + local queue mirror ----------
+const pad = $('pad'), queue = [];
+let current = null, currentStart = 0;
+pad.innerHTML = `<div class="title">🐾 <b>YOUR PAWS</b>: the chef sees your bear do the move. One tap = one portion.</div>
+  <div class="row" id="rowIng"></div><div class="row ctrl" id="rowCtrl"></div>`;
+for (const g of GESTURES) {
+  const btn = document.createElement('button');
+  btn.innerHTML = `<span class="em">${g.emoji}</span>${g.label} <span class="key">${g.key}</span><span class="hint">chef sees: ${g.hint}</span>`;
+  btn.onclick = () => doGesture(g.id);
+  g.btn = btn; $(g.control ? 'rowCtrl' : 'rowIng').appendChild(btn);
+}
+function doGesture(id) {
+  if (!facing || yaw < Math.PI * 0.85) return; // must be facing the kitchen window
+  const g = GESTURE_BY_ID[id];
+  send('gesture', { id });
+  queue.push(id);
+  g.btn.classList.add('on'); setTimeout(() => g.btn.classList.remove('on'), 150);
+}
+function updateQueue(now) {
+  if (current && now - currentStart > GESTURE_SECONDS + 0.3) current = null;
+  if (!current && queue.length) { current = queue.shift(); currentStart = now; }
+  const html = !facing ? '' : (current ? `Chef is seeing: <span class="now">${GESTURE_BY_ID[current].emoji}</span> <b>${GESTURE_BY_ID[current].label}</b>` : '') +
+    (queue.length ? `<br>Up next: ${queue.map((q) => GESTURE_BY_ID[q].emoji).join(' ')}` : '');
+  if ($('queue').innerHTML !== html) $('queue').innerHTML = html;
+}
+
+addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  if (e.code === 'Space') { e.preventDefault(); turn(); return; }
+  if (e.key === 'Tab') { e.preventDefault(); toggleManual(); return; }
+  if (e.key.toLowerCase() === 'h') { toggleHelp(); return; }
+  const g = GESTURES.find((g) => g.key === e.key.toUpperCase());
+  if (g) doGesture(g.id);
+});
+
+// ---------- manual ----------
+async function loadManual() {
+  const r = await (await fetch('/rules.json')).json();
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  $('manual').innerHTML = `
+    <h2>📖 ${esc(r.manualTitle || 'Rule book')}</h2>
+    <p class="intro">${esc(r.manualIntro || '')}</p>
+    <h3>BASE döner</h3>
+    <div class="base">${r.orders[0].ingredients.map(ingLabel).join(' + ')}</div>
+    <h3>RULES (apply every one that matches)</h3>
+    ${r.rules.map((x) => `<div class="rule">${esc(x.text)}</div>`).join('')}
+    <p style="font-size:13px;color:#777">TAB closes the book</p>`;
+}
+function toggleManual() { if (!facing) $('manual').classList.toggle('open'); }
+$('manualBtn').onclick = toggleManual;
+$('turnBtn').onclick = turn;
+$('turnMsg').onclick = turn;
+const toggleHelp = () => ($('help').style.display = $('help').style.display === 'flex' ? 'none' : 'flex');
+$('helpBtn').onclick = toggleHelp; $('helpClose').onclick = toggleHelp;
+
+// ---------- network ----------
+let state = null;
+connect((m) => {
+  if (m.type === 'state') {
+    state = m.state;
+    chefFacing = state.chefFacing ?? 1;
+    $('clock').textContent = state.clock;
+    $('time').textContent = Math.ceil(state.timeLeft);
+    $('score').textContent = state.score;
+    $('served').textContent = state.served;
+    const c = state.customer;
+    $('patience').firstElementChild.style.width = c ? `${(c.patience / c.maxPatience) * 100}%` : '0%';
+    if (c && c.id !== customerId) { customerId = c.id; customer = buildCustomer(c); customerEnter = performance.now() / 1000; }
+    if (state.phase === 'over') { $('lobby').style.display = 'flex'; $('lobbyMsg').textContent = `Round over! Score ${state.score} · ${state.served} served · ${state.failed} failed`; $('startBtn').textContent = 'PLAY AGAIN 🔊'; }
+    if (state.phase === 'playing' && audio.ctx) $('lobby').style.display = 'none';
+  }
+  if (m.type === 'started') loadManual();
+  if (m.type === 'result') showResult(m);
+  if (m.type === 'strobe') strobeUntil = performance.now() / 1000 + m.duration;
+  if (m.type === 'signal') {
+    chefSignal = m.id; chefSignalStart = performance.now() / 1000;
+    if (facing) {
+      $('signal').textContent = m.id === 'ok' ? '🙌 Chef: got it!' : '🤷 Chef: I missed that, repeat it!';
+      $('signal').style.opacity = 1; clearTimeout($('signal').t); $('signal').t = setTimeout(() => ($('signal').style.opacity = 0), 2000);
+    }
+  }
+});
+
+function showResult(m) {
+  audio.blip(m.ok);
+  const f = $('flash');
+  f.style.background = m.ok ? '#00e67655' : '#ff1744aa';
+  f.innerHTML = `${m.ok ? '✅ PERFECT' : '❌ ' + m.reason} ${m.delta > 0 ? '+' : ''}${m.delta}` + (m.ok ? '' : whyHtml(m));
+  showFlash(f, m.ok);
+  queue.length = 0; current = null;
+}
+
+$('startBtn').onclick = () => {
+  audio.init(); loadManual();
+  if (!state || state.phase !== 'playing') send('start');
+  $('lobby').style.display = 'none';
+};
+loadManual();
+
+// ---------- loop ----------
+let strobeUntil = 0, last = performance.now() / 1000;
+renderer.setAnimationLoop(() => {
+  const now = performance.now() / 1000, dt = now - last; last = now;
+  const beat = audio.beat();
+  club.update(beat, now);
+  updateQueue(now);
+  updateCamera(dt);
+  winNeon.material.color.setHSL((now * 0.15) % 1, 1, 0.55);
+
+  // chef bear: faces us when the chef player looks at the window
+  chefYaw += ((chefFacing ? 0 : Math.PI) - chefYaw) * Math.min(1, dt * 8);
+  resetPose(chef);
+  chef.group.rotation.y = chefYaw;
+  chef.group.position.z += ((chefFacing ? KZ + 2.5 : KZ + 1.1) - chef.group.position.z) * Math.min(1, dt * 6); // walks up to the window when watching
+  const st = now - chefSignalStart;
+  if (chefSignal && st < 2) CHEF_SIGNALS[chefSignal](st, chef);
+  else if (chefFacing) { chef.armP.rotation.set(-1.2, 0, 0.1 + 0.2 * Math.sin(now * 8)); chef.armN.rotation.set(-1.2, 0, -0.1); chef.head.rotation.x = 0.4; }
+  $('watching').textContent = chefFacing ? '🙈 Chef is looking at the table' : '👀 Chef is watching you!';
+  $('watching').style.color = chefFacing ? '#ff8a80' : '#69f0ae';
+
+  if (customer) {
+    const k = Math.min(1, (now - customerEnter) / 0.8);
+    const g = customer.group;
+    resetPose(customer);
+    g.position.x = -6 + 6 * (1 - Math.pow(1 - k, 3));
+    g.position.y = Math.abs(Math.sin(beat * Math.PI)) * 0.06;
+    customer.head.rotation.x = Math.abs(Math.sin(beat * Math.PI)) * 0.15;
+    if (customer.drunk) { g.rotation.z = Math.sin(now * 1.6) * 0.18; g.position.x += Math.sin(now * 0.8) * 0.3; customer.head.rotation.z = Math.sin(now * 2.1) * 0.25; }
+    if (customer.glitter) customer.glitter.material.color.setHSL((now * 2) % 1, 1, 0.75);
+    customer.armP.rotation.z = 2.3 + Math.abs(Math.sin(beat * Math.PI)) * 0.4; // fist pump keeps the wristband visible
+  }
+  const strobing = now < strobeUntil;
+  scene.background.set(strobing && Math.floor(now * 14) % 2 ? '#ffffff' : '#05010a');
+  renderer.render(scene, camera);
+});
+</script>
+</body></html>
