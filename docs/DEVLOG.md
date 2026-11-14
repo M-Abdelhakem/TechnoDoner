@@ -444,6 +444,17 @@ Tarek dances, and Bruno's book flashes four similar routines → 3-2-1 *"comment
 
 **Design direction:** Jackbox-style clarity. Big, flashing step-by-step prompts, so nobody is ever unsure what to do next.
 
+**Built** (`d945963`, Regulars + Club):
+- **Serving is simpler:** Bruno's döner lands straight in Bärbel's paws (the take step is gone). She **raises a hand above her head** to serve, measured against her own nose, so it works wherever she sits and there's no box to hit. A ring fills over 0.4 s. Without the camera: G, or tap the banner.
+- **Smoother tracking:** jitter is eased, and the last good reading holds through brief dropouts.
+- **One big numbered instruction** at the top of each screen, popping when it changes and flashing when urgent:
+  - Bärbel: ① COPY THE DANCE! → ② RAISE YOUR HAND TO SERVE MIA!
+  - Bruno: ① WATCH BÄRBEL · FIND THE DANCE → ② ADD THE FILLING → ③ DONE? TAP THE PLATE TO PASS IT, plus a pink NEW REGULAR! alert.
+- **A role card per shift** ("YOU ARE BÄRBEL · CASHIER", with three illustrated steps).
+- **Result stamps on both screens:** PERFECT! +€11 / WRONG DÖNER! / MIA LEFT!
+
+Tested with a simulated camera. The **Original** got the same treatment (`b735a6e`): the döner flies from the hatch into Bärbel's paws with a ding, and she serves by raising a hand above her head while a big "SERVING MIA…" ring fills up. All 28 of its checks pass. Not deployed yet.
+
 ---
 
 ## Open questions
