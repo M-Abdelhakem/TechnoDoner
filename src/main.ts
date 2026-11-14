@@ -86,7 +86,9 @@ addEventListener('keydown', (e) => {
     if (e.key >= '1' && e.key <= '7') { cashier.setPose('ULRCHNW'[+e.key - 1]); return; }
     if (e.key === '0' || e.code === 'Space') { e.preventDefault(); cashier.setPose('I'); return; }
     if (e.key === 'c' || e.key === 'C') { cashier.toggleCamera(); return; }
+    if (e.key === 'g' || e.key === 'G' || (e.key === 'Enter' && mode !== 'solo')) { cashier.click('serve'); return; }
   }
+  if (chefView && (!cashierHuman || mode === 'solo') && e.key === 'Enter') { chefView.click('plate'); return; }
   if (chefView && (!cashierHuman || mode === 'solo')) { const k = { 7: '+', 8: '-', 9: '?', 0: 'w' }[e.key] ?? (human === 'chef' || mode === 'online' ? { 1: '+', 2: '-', 3: '?', 4: 'w' }[e.key] : null); if (k) chefView.sign(k); }
 });
 addEventListener('resize', () => views.forEach((v) => v.resize()));

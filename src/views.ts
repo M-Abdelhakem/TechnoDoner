@@ -31,7 +31,7 @@ export class View {
     const pos = (e) => { const r = this.cv.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * VW, ((e.clientY - r.top) / r.height) * VH]; };
     this.cv.addEventListener('pointermove', (e) => { [this.mx, this.my] = pos(e); });
     this.cv.addEventListener('pointerleave', () => { this.mx = this.my = -99; this.holdId = null; });
-    this.cv.addEventListener('pointerdown', (e) => { [this.mx, this.my] = pos(e); this.cv.setPointerCapture(e.pointerId); const h = this.hitAt(this.mx, this.my); if (!h) return; if (h.id === 'mute') { toggleMute(); return; } if (h.hold) this.holdId = h.id; else this.click(h.id); });
+    this.cv.addEventListener('pointerdown', (e) => { [this.mx, this.my] = pos(e); this.cv.setPointerCapture(e.pointerId); const h = this.hitAt(this.mx, this.my); if (!h) return; if (h.id === 'mute') { toggleMute(); return; } if (h.id === 'card') { this.cardSkip = this.cardAt; return; } if (h.hold) this.holdId = h.id; else this.click(h.id); });
     addEventListener('pointerup', () => { this.holdId = null; });
     this.build(); this.resize();
   }
@@ -55,6 +55,40 @@ export class View {
     if (!t) { this.handHold = 0; this.handOn = null; return; }
     if (this.handOn !== t.id) { this.handOn = t.id; this.handHold = 0; }
     this.handHold += dt; if (this.handHold >= 0.5) { this.handHold = -0.6; this.click(t.id); }
+  }
+  /** THE instruction: always one, big, numbered; it pops when it changes and flashes when urgent (Jackbox-style) */
+  banner(step, text, sub = '', col = '#ffcf5a', urgent = false, cx = VW / 2, hitId = null, ring = 0) {
+    const c = this.c, now = performance.now() / 1000;
+    if (text !== this.bnText) { this.bnText = text; this.bnAt = now; if (!this.headless && this.bnAt > 1) sfx('pose'); }
+    const age = now - this.bnAt, pop = Math.max(0, 1 - age * 4), flash = urgent && Math.floor(now * 3) % 2 === 0;
+    c.save(); c.translate(cx, 36); c.scale(1 + pop * 0.18, 1 + pop * 0.18);
+    c.font = '24px Bungee, sans-serif'; const w = Math.min(VW - 40, Math.max(c.measureText(text).width + (step ? 84 : 44), sub ? 360 : 0));
+    if (hitId) this.hit(hitId, cx - w / 2, 8, w, 60);
+    c.fillStyle = flash ? col : '#120a18f2'; rr(c, -w / 2, -28, w, 58, 16); c.fill(); c.lineWidth = 4; c.strokeStyle = col; c.stroke();
+    if (step) { c.fillStyle = flash ? '#120a18' : col; c.beginPath(); c.arc(-w / 2 + 32, 0, 19, 0, 7); c.fill(); c.fillStyle = flash ? col : '#120a18'; c.font = '22px Bungee, sans-serif'; c.textAlign = 'center'; c.fillText(step, -w / 2 + 32, 8); }
+    if (ring > 0) { c.strokeStyle = '#7dff9a'; c.lineWidth = 6; c.beginPath(); c.arc(-w / 2 + 32, 0, 25, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, ring)); c.stroke(); }
+    c.fillStyle = flash ? '#120a18' : '#fff'; c.font = '24px Bungee, sans-serif'; c.textAlign = 'center'; c.fillText(text, step ? 21 : 0, 9);
+    c.restore();
+    if (sub) { c.font = '13px Archivo, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#000d'; c.strokeText(sub, cx, 84); c.fillStyle = '#fff'; c.fillText(sub, cx, 84); }
+  }
+  /** a big result stamp in the middle: PERFECT / WRONG / LEFT */
+  stamp(text, col) { this.stampTxt = text; this.stampCol = col; this.stampAt = performance.now() / 1000; }
+  drawStamp(cx = VW / 2) {
+    if (!this.stampTxt) return; const age = performance.now() / 1000 - this.stampAt; if (age > 1.8) return;
+    const c = this.c, s = age < 0.15 ? 2.2 - age * 8 : 1, a = Math.min(1, (1.8 - age) * 3);
+    c.save(); c.globalAlpha = a; c.translate(cx, 250); c.rotate(-0.08); c.scale(s, s);
+    c.font = '46px Bungee, sans-serif'; const w = c.measureText(this.stampTxt).width + 60;
+    c.fillStyle = '#120a18e8'; rr(c, -w / 2, -46, w, 80, 18); c.fill(); c.lineWidth = 7; c.strokeStyle = this.stampCol; c.stroke();
+    c.fillStyle = this.stampCol; c.textAlign = 'center'; c.fillText(this.stampTxt, 0, 12); c.restore();
+  }
+  /** the role card at the start of each shift: who you are and the three things you do; tap to skip */
+  roleCard(title, col, steps, cx = VW / 2) {
+    const age = performance.now() / 1000 - (this.cardAt || -99); if (age > 5 || this.cardSkip === this.cardAt) return;
+    const c = this.c; this.hit('card', 0, 0, VW, VH); c.fillStyle = '#0a0610ee'; c.fillRect(0, 0, VW, VH);
+    c.textAlign = 'center'; c.fillStyle = '#bba9c8'; c.font = '16px Bungee, sans-serif'; c.fillText('YOU ARE', cx, 92);
+    c.fillStyle = col; c.font = '46px Bungee, sans-serif'; c.fillText(title, cx, 146);
+    steps.forEach((s, i) => { const y = 200 + i * 86; c.fillStyle = col; c.beginPath(); c.arc(cx - 250, y + 26, 26, 0, 7); c.fill(); c.fillStyle = '#120a18'; c.font = '24px Bungee, sans-serif'; c.fillText(String(i + 1), cx - 250, y + 35); s.icon(c, cx - 180, y + 26); c.textAlign = 'left'; c.fillStyle = '#fff'; c.font = '22px Bungee, sans-serif'; c.fillText(s.t, cx - 130, y + 22); c.fillStyle = '#bba9c8'; c.font = '14px Archivo, sans-serif'; c.fillText(s.sub, cx - 130, y + 44); c.textAlign = 'center'; });
+    c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('tap to start', cx, 480);
   }
   /** someone bangs on the counter: a short shake of the camera */
   rattle(dt) { if (this.shakeT > 0) { this.shakeT -= dt; const k = this.shakeT * 0.05; this.camera.position.x += (Math.random() - 0.5) * k; this.camera.position.y += (Math.random() - 0.5) * k; } }
@@ -83,8 +117,8 @@ export class View {
     this.pops.forEach((p) => { p.t += dt; c.globalAlpha = Math.max(0, 1 - p.t / 1.4); c.fillStyle = p.col; c.font = '26px Bungee, sans-serif'; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#000a'; c.strokeText(p.txt, p.x, p.y - p.t * 40); c.fillText(p.txt, p.x, p.y - p.t * 40); c.globalAlpha = 1; });
     this.pops = this.pops.filter((p) => p.t < 1.4);
     // mute, on every screen (M too)
-    this.hit('mute', 8, 8, 40, 32); c.fillStyle = this.hover === 'mute' ? '#4a3660' : '#000a'; rr(c, 8, 8, 40, 32, 8); c.fill();
-    c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.textAlign = 'center'; c.fillText(isMuted() ? '🔇' : '🔊', 28, 30);
+    const mX = this.vp.x + 8; this.hit('mute', mX, 8, 40, 32); c.fillStyle = this.hover === 'mute' ? '#4a3660' : '#000a'; rr(c, mX, 8, 40, 32, 8); c.fill();
+    c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.textAlign = 'center'; c.fillText(isMuted() ? '🔇' : '🔊', mX + 20, 30);
     // the camera hand: a big paw with a fill ring while it holds over a target
     if (this.handXY) { const [hx, hy] = this.handXY; paw(c, hx, hy, 20, this.kind ? '#efe6d2' : '#8b5a33'); if (this.handHold > 0) { c.strokeStyle = '#7dff9a'; c.lineWidth = 6; c.beginPath(); c.arc(hx, hy, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, this.handHold / 0.5)); c.stroke(); } }
     if (this.mx > -50) paw(c, this.mx + 6, this.my + 10, 12, this.kind ? '#efe6d2' : '#8b5a33', -0.4);
@@ -101,7 +135,7 @@ const ACTIVE = [0, 1.42, -0.8], QPOS = [[-1.05, 1.32, -1.9], [0.95, 1.3, -2.7]];
 export class Cashier extends View {
   constructor(stage, ep) {
     super(stage); this.kind = 1; this.ep = ep;
-    Object.assign(this, { ph: 'wait', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, took: 0, rid: 0, clock: 0, cid: 0, spawnT: 2, lastSend: 0, poseKey: 'I', cam: null, camMsg: '', recent: [], policeT: 25, police: -1, lvId: 'normal', L: lv('normal') });
+    Object.assign(this, { ph: 'wait', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, took: 0, rid: 0, clock: 0, cid: 0, spawnT: 2, lastSend: 0, poseKey: 'I', cam: null, camMsg: '', recent: [], policeT: 25, police: -1, lvId: 'normal', L: lv('normal'), raiseT: 0, res: null, resSeq: 0 });
     this.sent = POSES.I.v.slice(); this.models = new Map();
   }
   build() {
@@ -154,7 +188,8 @@ export class Cashier extends View {
   }
   extra3d() { const r = this.renderer; const x = Math.round(8 * LOWK), w = Math.round(200 * LOWK), h = Math.round(150 * LOWK), y = Math.round((VH - 462) * LOWK); r.setViewport(x, y, w, h); r.setScissor(x, y, w, h); r.render(this.self, this.selfCam); }
   relevant(id) { if (id === 'tray') return !!this.tray && !this.held; if (id === 'cu') return !!(this.held && this.queue[0]); return true; }
-  start(level = this.lvId) { this.rid++; this.lvId = level; this.L = lv(level); Object.assign(this, { ph: 'play', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, spawnT: 1, cid: 0, pops: [] }); }
+  start(level = this.lvId) { this.rid++; this.lvId = level; this.L = lv(level); Object.assign(this, { ph: 'play', t: 180, sc: 0, sv: 0, lost: 0, queue: [], held: null, spawnT: 1, cid: 0, pops: [], raiseT: 0 }); this.cardAt = performance.now() / 1000; }
+  result(kind, delta, name) { this.res = [++this.resSeq, kind, delta, name]; const t = { ok: `PERFECT! +€${delta}`, bad: `WRONG DÖNER! −€${-delta}`, left: `${name.toUpperCase()} LEFT! −€${-delta}` }[kind]; this.stamp(t, kind === 'ok' ? '#7dff9a' : '#ff5a5a'); }
   danceOf(cu) { return danceFor(REGULARS[cu.reg], this.L.danceLen); }
   spawn() {
     if (this.queue.length >= this.L.queue) return;
@@ -174,13 +209,15 @@ export class Cashier extends View {
     if (id.startsWith('pz')) { this.setPose(id.slice(2)); return; }
     if (id === 'cam') { this.toggleCamera(); return; }
     if (this.ph !== 'play') return;
+    if (id === 'serve') { this.serve(); return; }
     if (id === 'tray' && !this.held && this.tray) { this.held = this.tray[1]; this.took = this.tray[0]; sfx('pick'); return; }
     if (id === 'cu' && this.held) this.serve();
   }
   serve() {
     const cu = this.queue[0]; if (!cu || !this.held) return; const want = RECIPES[REGULARS[cu.reg].rec][1]; const [x, y] = this.at(ACTIVE[0], ACTIVE[1] + 0.3, ACTIVE[2]);
-    if (this.held.slice(1) === want) { const tip = Math.round((4 * cu.pat) / cu.max); this.sc += 8 + tip; this.sv++; this.queue.shift(); this.held = null; this.pop(x, y, `+€${8 + tip}`, '#7dff9a'); sfx('serve'); this.spawnT = Math.min(this.spawnT, 2.5); }
-    else { this.sc -= 3; this.held = null; cu.flash = 0.6; this.pop(x, y, 'Falsch! −€3', '#ff6060'); sfx('bad'); }
+    this.raiseT = 0;
+    if (this.held.slice(1) === want) { const tip = Math.round((4 * cu.pat) / cu.max); this.sc += 8 + tip; this.sv++; this.queue.shift(); this.held = null; this.result('ok', 8 + tip, REGULARS[cu.reg].name); sfx('serve'); this.spawnT = Math.min(this.spawnT, 2.5); }
+    else { this.sc -= 3; this.held = null; cu.flash = 0.6; this.result('bad', -3, REGULARS[cu.reg].name); sfx('bad'); }
   }
   at(x, y, z) { return this.headless ? [480, 200] : this.proj(x, y, z); }
   update(dt) {
@@ -192,7 +229,11 @@ export class Cashier extends View {
       this.queue.forEach((cu, i) => { cu.pat -= dt * (i === 0 ? 1 : 0.35); cu.flash = Math.max(0, cu.flash - dt); });
       const a = this.queue[0]; if (a) { const u = urgency(a.pat); if (u > a.urg) { a.urg = u; sfx('tick'); const [x, y] = this.at(ACTIVE[0], ACTIVE[1] + 0.9, ACTIVE[2]); this.pop(x, y, URGENCY_TEXT[u], URGENCY_COL[u]); } }
       const gone = this.queue.findIndex((cu) => cu.pat <= 0);
-      if (gone >= 0) { this.queue.splice(gone, 1); this.sc -= 5; this.lost++; const [x, y] = this.at(0, 1.8, -0.8); this.pop(x, y, '−€5', '#ff6060'); sfx('bad'); }
+      if (gone >= 0) { const g = this.queue.splice(gone, 1)[0]; this.sc -= 5; this.lost++; this.result('left', -5, REGULARS[g.reg].name); sfx('bad'); }
+      // Bruno passed it: straight into your paws (no take step)
+      if (this.tray && !this.held) { this.held = this.tray[1]; this.took = this.tray[0]; sfx('take'); }
+      // raise a hand above your head to serve (camera); the fill takes 0.4 s
+      if (this.held && this.queue[0] && this.cam && this.cam.handUp()) { this.raiseT += dt; if (this.raiseT >= 0.4) this.serve(); } else this.raiseT = Math.max(0, this.raiseT - dt * 2);
     }
     let target = (this.cam && this.cam.latest()) || POSES[this.poseKey].v;
     if (!this.cam && this.poseKey === 'W') { target = target.slice(); const w = Math.sin(this.clock * 9) * 0.45; target[6] += w; target[9] += w * 1.3; } // waving the raised arm
@@ -200,7 +241,7 @@ export class Cashier extends View {
     this.policeT -= dt; if (this.policeT <= 0) { this.policeT = 35 + Math.random() * 25; this.police = 0; if (!this.headless) siren(4); }
     if (this.police >= 0) { this.police += dt; if (this.police > 6) this.police = -1; }
     const now = performance.now();
-    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: BB, role: 'cashier', ph: this.ph, t: Math.round(this.t * 10) / 10, sc: this.sc, sv: this.sv, lost: this.lost, rid: this.rid, took: this.took, pose: quant(this.sent), sg: [this.signId, this.mySign || ''], lv: this.lvId, urg: this.queue[0] ? urgency(this.queue[0].pat) : 0 }); }
+    if (now - this.lastSend > 50) { this.lastSend = now; this.ep.set({ bb: BB, role: 'cashier', ph: this.ph, t: Math.round(this.t * 10) / 10, sc: this.sc, sv: this.sv, lost: this.lost, rid: this.rid, took: this.took, pose: quant(this.sent), sg: [this.signId, this.mySign || ''], lv: this.lvId, urg: this.queue[0] ? urgency(this.queue[0].pat) : 0, res: this.res, cid: this.queue[0]?.id ?? 0 }); }
   }
   render(dt) {
     const T = this.clock, b = beat(), pulse = 1 - b.ph, beats = b.n;
@@ -247,10 +288,7 @@ export class Cashier extends View {
     }
     if (this.queue.length > 1) this.label(0, 2.25, -2.4, `${this.queue.length - 1} waiting`, '#bba9c8', 10);
     if (this.tray) this.label(1.55, 1.32, 0.05, 'DÖNER!', '#7dff9a', 13);
-    if (this.held && cu) this.label(ACTIVE[0], 0.98, ACTIVE[2] + 0.5, 'TAP THE REGULAR TO SERVE', '#7dff9a', 11);
     this.hud(this.t, this.sc, VW - 16, 46); c.textAlign = 'right'; c.font = '10px Bungee, sans-serif'; c.fillStyle = '#bba9c8'; c.fillText(`SHIFT · ${this.L.name.toUpperCase()}`, VW - 16, 14);
-    // camera hand: hold it over the tray to take, over the regular to serve
-    if (this.cam) { const tg = []; if (this.tray && !this.held) tg.push({ id: 'tray', x: VW * 0.8, y: 120, w: VW * 0.2, h: 330, label: 'TAKE: hand out to the side →' }); if (this.held && cu) tg.push({ id: 'cu', x: 230, y: 0, w: 500, h: 105, label: '↑ GIVE: lift it above your head' }); this.handTargets(dt, this.cam, tg); tg.forEach((q) => { c.strokeStyle = '#7dff9a88'; c.setLineDash([8, 6]); c.lineWidth = 3; rr(c, q.x, q.y, q.w, q.h, 14); c.stroke(); c.setLineDash([]); c.fillStyle = '#7dff9a'; c.font = '13px Bungee, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#000c'; c.strokeText(q.label, q.x + q.w / 2, q.y + q.h / 2); c.fillText(q.label, q.x + q.w / 2, q.y + q.h / 2); }); } else this.handXY = null;
     // self view frame
     c.strokeStyle = '#ffcf5a'; c.lineWidth = 3; rr(c, 8, 312, 200, 150, 8); c.stroke(); c.fillStyle = '#000b'; rr(c, 8, 292, 200, 22, 6); c.fill(); c.fillStyle = '#ffcf5a'; c.font = '10px Bungee, sans-serif'; c.textAlign = 'center'; c.fillText('WHAT BRUNO SEES', 108, 307);
     if (this.camMsg) { c.fillStyle = '#000c'; rr(c, 220, 400, 520, 30, 8); c.fill(); c.fillStyle = '#fff'; c.font = '13px Archivo, sans-serif'; c.fillText(this.camMsg, 480, 420); }
@@ -260,7 +298,18 @@ export class Cashier extends View {
     this.button('pzW', 12 + 7 * 70, 476, 64, 58, !this.cam && this.poseKey === 'W'); drawPoseIcon(c, 'W', 12 + 7 * 70 + 32, 498, 0.8); c.fillStyle = '#ffcf5a'; c.font = '10px Archivo, sans-serif'; c.fillText('7 Hurry!', 12 + 7 * 70 + 32, 530);
     this.button('cam', 580, 476, 130, 58, !!this.cam); c.fillStyle = '#fff'; c.font = '12px Bungee, sans-serif'; c.fillText(this.cam ? 'CAMERA ON' : 'USE CAMERA', 645, 503); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.fillText(this.cam ? 'hand: take & serve' : 'copy with your body', 645, 520);
     c.textAlign = 'left'; c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('Copy the regular\'s dance.', 722, 496); c.fillText('One arm up, waving: hurry!', 722, 514);
-    if (this.ph === 'play' && this.sv === 0 && this.t > 165) { c.textAlign = 'center'; c.fillStyle = '#000c'; rr(c, 230, 220, 500, 64, 12); c.fill(); c.fillStyle = '#fff'; c.font = '15px Archivo, sans-serif'; c.fillText('You can\'t hear a thing. Copy each regular\'s dance (camera or 1–6).', 480, 245); c.fillText('Bruno knows what they always order. Serve what he passes you.', 480, 268); }
+    if (this.ph === 'play') {
+      const nm = cu ? REGULARS[cu.reg].name.toUpperCase() : '';
+      if (!cu) this.banner('', 'WAITING FOR A REGULAR…', '', '#bba9c8');
+      else if (this.held) this.banner('2', `RAISE YOUR HAND TO SERVE ${nm}!`, this.cam ? 'hand above your head · or press G / tap here' : 'press G or tap here (turn the camera on to serve by raising your hand)', '#7dff9a', true, VW / 2, 'serve', this.raiseT / 0.4);
+      else this.banner('1', 'COPY THE DANCE!', this.cam ? 'Bruno reads your moves in the hatch · arms out to the sides, not in front' : 'keys 1–6 strike the moves · or turn the camera on and dance', '#ffcf5a');
+    }
+    this.drawStamp();
+    this.roleCard('BÄRBEL · CASHIER', '#7fe0d4', [
+      { t: 'WATCH THE REGULAR DANCE', sub: 'their dance tells Bruno who they are', icon: (c, x, y) => drawPoseIcon(c, 'U', x, y - 4, 1.1, '#fff') },
+      { t: 'COPY IT WITH YOUR BODY', sub: 'camera on, or keys 1–6 · Bruno watches you', icon: (c, x, y) => drawPoseIcon(c, 'C', x, y - 4, 1.1, '#7fe0d4') },
+      { t: 'RAISE YOUR HAND TO SERVE', sub: 'the döner lands in your paws when Bruno is done', icon: (c, x, y) => drawItem(c, 'Dmlt', x, y, 0.9) },
+    ]);
     this.finish(dt);
   }
 }
@@ -269,7 +318,7 @@ export class Cashier extends View {
 const HX = 0.15;
 export class Chef extends View {
   viewport() { return { x: 250, w: 710 }; }
-  constructor(stage, ep) { super(stage); this.kind = 0; this.ep = ep; Object.assign(this, { plate: null, board: null, boardP: 0, shave: 0, pass: null, passId: 0, rid: -1, clock: 0, lastSend: 0, flashT: 0, knockT: 0, shakeT: 0 }); }
+  constructor(stage, ep) { super(stage); this.kind = 0; this.ep = ep; Object.assign(this, { plate: null, board: null, boardP: 0, shave: 0, pass: null, passId: 0, rid: -1, clock: 0, lastSend: 0, flashT: 0, knockT: 0, shakeT: 0, sawRes: 0, sawCid: 0, newT: 0 }); }
   build() {
     const s = this.scene, cam = this.camera; s.background = new THREE.Color(0x0b1416); s.fog = new THREE.Fog(0x0b1416, 4, 12);
     cam.fov = 56; cam.updateProjectionMatrix(); cam.position.set(HX, 1.85, 1.9); cam.lookAt(HX, 1.22, -0.8); this.camBase = cam.position.clone();
@@ -318,9 +367,11 @@ export class Chef extends View {
   }
   update(dt) {
     const P = (this.P = this.ep.partner()); this.clock += dt; this.readPartnerSign(P); this.pSignT -= dt; this.mySignT -= dt;
-    if (P && P.rid !== this.rid) { this.rid = P.rid; this.reset(); }
+    if (P && P.rid !== this.rid) { this.rid = P.rid; this.reset(); if (P.ph === 'play') this.cardAt = performance.now() / 1000; this.sawRes = P.res ? P.res[0] : 0; }
     if (this.pass && P && P.took >= this.pass[0]) this.pass = null;
     const play = P && P.ph === 'play';
+    if (P && P.res && P.res[0] !== this.sawRes) { this.sawRes = P.res[0]; const [, k, d, n] = P.res; this.stamp({ ok: `PERFECT! +€${d}`, bad: 'WRONG DÖNER!', left: `${String(n).toUpperCase()} LEFT!` }[k], k === 'ok' ? '#7dff9a' : '#ff5a5a'); if (!this.headless) sfx(k === 'ok' ? 'serve' : 'bad'); }
+    if (P && P.cid !== this.sawCid) { if (P.cid && play) { this.newT = 2.2; if (!this.headless) sfx('newc'); } this.sawCid = P.cid; } this.newT -= dt;
     // somebody is banging on the counter: Bruno only hears that much
     if (play && P.urg >= 2) { this.knockT -= dt; if (this.knockT <= 0) { this.knockT = P.urg >= 3 ? 1.4 : 2.6; this.shakeT = 0.35; if (!this.headless) { sfx('knock'); const [x, y] = this.scr(HX, 2.2, -1.0); this.pop(x + (Math.random() - 0.5) * 120, y, 'BANG', '#ff7a30'); } } } else this.knockT = 0.5;
     if (play && this.holdId === 'spit') {
@@ -348,6 +399,14 @@ export class Chef extends View {
     if (this.shave > 0) { const [x, y] = this.proj(1.35, 2.0, -0.62); bar(c, x - 50, y, 100, 9, this.shave, '#7dff9a'); }
     if (this.board) { const [x, y] = this.proj(-0.5, 1.25, -0.08); if (this.boardP > 0) bar(c, x - 50, y - 14, 100, 8, this.boardP, '#7dff9a'); this.label(-0.5, 0.86, 0.1, this.board === this.board.toUpperCase() ? 'HOLD TO CHOP' : 'TAP: ONTO BREAD', '#fff', 10); }
     if (this.plate && !this.pass) this.label(0.42, 0.86, 0.12, 'TAP: PASS TO BÄRBEL', '#7dff9a', 10);
+    if (P && P.ph === 'play') {
+      const CX = 605;
+      if (this.newT > 0) this.banner('!', 'NEW REGULAR! WATCH THE DANCE', 'look at Bärbel in the hatch', '#ff4fa8', true, CX);
+      else if (this.pass) this.banner('', 'BÄRBEL IS SERVING IT…', 'start watching for the next dance', '#bba9c8', false, CX);
+      else if (!this.plate) this.banner('1', 'WATCH BÄRBEL · FIND THE DANCE', 'match her moves to a row in your book · then tap the BREAD', '#ffcf5a', false, CX);
+      else if (this.plate === 'D') this.banner('2', 'ADD THE FILLING', 'meat: hold the spit · veg: tap a bin, hold the board · sauce bottles', '#ffcf5a', false, CX);
+      else this.banner('3', 'DONE? TAP THE PLATE TO PASS IT', 'check the book: is everything in? (Enter)', '#7dff9a', true, CX, 'plate');
+    }
     if (this.pass) this.label(HX, 1.42, -0.88, 'waiting for Bärbel', '#fff', 10);
     this.label(HX, 2.3, -1.0, 'BÄRBEL', '#ffb238', 12);
     // the book
@@ -365,6 +424,12 @@ export class Chef extends View {
     ['+', '-', '?', 'w'].forEach((k, i) => { const x = 330 + i * 72; this.button('sg' + k, x, 476, 64, 58); drawSignIcon(c, k, x + 32, 501, 0.8); c.fillStyle = '#bba9c8'; c.font = '10px Archivo, sans-serif'; c.textAlign = 'center'; c.fillText(`${i + 1} ${NAMES[k]}`, x + 32, 528); });
     this.hud(P ? P.t : 0, P ? P.sc : 0, VW - 16, 500);
     c.textAlign = 'left'; c.fillStyle = '#bba9c8'; c.font = '12px Archivo, sans-serif'; c.fillText('You can\'t see the customers.', 14, 496); c.fillText('Read Bärbel\'s dance in the hatch.', 14, 514);
+    this.drawStamp(605);
+    this.roleCard('BRUNO · CHEF', '#e3a36a', [
+      { t: 'WATCH BÄRBEL IN THE HATCH', sub: 'she copies the regular\'s dance with her body', icon: (c, x, y) => drawPoseIcon(c, 'L', x, y - 4, 1.1, '#fff') },
+      { t: 'FIND THE DANCE IN YOUR BOOK', sub: 'each regular always orders the same thing', icon: (c, x, y) => drawFace(c, 1, x, y, 20) },
+      { t: 'COOK IT AND PASS IT', sub: 'bread, meat, veg, sauce · tap the plate', icon: (c, x, y) => drawItem(c, 'Dmlt', x, y, 0.9) },
+    ], 480);
     if (!P || P.ph !== 'play') { c.fillStyle = '#000a'; c.fillRect(250, 0, 710, 470); c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = '22px Bungee, sans-serif'; c.fillText(!P ? 'Waiting for Bärbel…' : P.ph === 'end' ? 'Feierabend!' : 'Bärbel opens the window', 605, 240); }
     this.finish(dt);
   }
