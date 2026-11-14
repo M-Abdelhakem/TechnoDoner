@@ -11,6 +11,8 @@ import { startMusic, stopMusic, initAudio } from './audio';
 const platform = detectPlatform('berlin-bears');
 const $ = (id) => document.getElementById(id);
 const stage = $('stage'), botstage = $('botstage');
+const siteURL = () => location.origin + location.pathname;
+QRCode.toCanvas($('siteQr'), siteURL(), { width: 120, margin: 1 }).catch(() => {}); $('siteUrl').textContent = siteURL();
 let views = [], bots = [], cashier = null, mode = null, human = 'both', ep = null, code = null, myRole = null, joinWait = null;
 
 function clearViews() { views.forEach((v) => { v.cam?.stop?.(); v.destroy?.(); }); stage.innerHTML = ''; botstage.innerHTML = ''; views = []; bots = []; cashier = null; }
@@ -41,7 +43,7 @@ function enter(role) {
   myRole = role; mode = 'online'; stage.className = 'one';
   if (role === 'cashier') { cashier = new Cashier(stage, ep); views = [cashier]; } else views = [new Chef(stage, ep)];
   views[0].resize();
-  const link = `${location.origin}${location.pathname}?k=${code}`;
+  const link = `${siteURL()}?k=${code}`;
   $('waitCode').textContent = code; $('joinLink').textContent = link; $('qrBox').hidden = false;
   QRCode.toCanvas($('qr'), link, { width: 150, margin: 1 }).catch(() => {});
   show('wait'); startMusic();

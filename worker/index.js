@@ -9,6 +9,9 @@
 // address. A release adds the jommi.fi/games/berlin-bears/play route in wrangler.jsonc and strips that prefix here
 // (Termination's src/worker.js is the reference).
 
+import { handleOriginal } from './original.js';
+export { OriginalGame } from './original.js';
+
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } });
 
 export class Room {
@@ -54,9 +57,15 @@ export class Lobby {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // the 1:1 TechnoDoner port (public/original/, worker/original.js): its /original/events and /original/action
+    if (/\/original\/(events|action)$/.test(url.pathname)) return handleOriginal(request, env, url);
     const room = url.pathname.match(/\/api\/room\/([A-Za-z0-9]{3,6})$/);
     if (room) return env.ROOMS.get(env.ROOMS.idFromName(room[1].toUpperCase())).fetch(request);
-    if (url.pathname.endsWith('/api/quick') && request.method === 'POST') return env.LOBBY.get(env.LOBBY.idFromName('main')).fetch(request);
+    if (url.pathname.endsWith('/api/quick') && request.method === 'POST') {
+      // one Lobby per game version (body.lobby), so Quick play never pairs two different versions
+      const lobby = String(new URL(request.url).searchParams.get('lobby') || 'main').replace(/[^a-z0-9]/g, '').slice(0, 16) || 'main';
+      return env.LOBBY.get(env.LOBBY.idFromName(lobby)).fetch(request);
+    }
     const response = await env.ASSETS.fetch(request);
     if (!url.hostname.endsWith('.workers.dev')) return response;
     const headers = new Headers(response.headers);

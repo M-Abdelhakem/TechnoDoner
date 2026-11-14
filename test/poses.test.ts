@@ -21,8 +21,9 @@ test('danceAt holds each pose two beats, then rests', () => {
   assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7, 8].map((b) => danceAt('UCH', b)).join(''), 'UUCCHHIIU');
 });
 
+type V2 = [number, number];
 /** a body in MediaPipe world coordinates (x to the image's right, y down), facing the camera */
-function body(lElbow: number[], lWrist: number[], rElbow: number[], rWrist: number[]) {
+function body(lElbow: V2, lWrist: V2, rElbow: V2, rWrist: V2) {
   const w = Array.from({ length: 33 }, () => ({ x: 0, y: 0, z: 0 }));
   const p = (x: number, y: number, z = 0) => ({ x, y, z });
   w[0] = p(0, -0.6, -0.1); w[7] = p(0.07, -0.58); w[8] = p(-0.07, -0.58);

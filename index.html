@@ -41,6 +41,8 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
 .small{font-size:13px;color:var(--muted)}
 .sep{height:1px;background:var(--line);margin:16px 0}
 #qr{background:#fff;border-radius:10px}
+.siteqr{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:140px;text-align:center;word-break:break-all}
+.siteqr canvas{background:#fff;border-radius:8px}
 @media (max-width:620px){.roles{grid-template-columns:1fr}.card{padding:16px}}
 </style>
 </head>
@@ -49,8 +51,11 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
 <div id="botstage" hidden></div>
 <div class="ov" id="loading"><p class="tag">Heating the grill…</p></div>
 <div class="ov" id="menu" hidden><div class="card">
-  <h1>Berlin Bears</h1>
-  <p class="tag">A döner window outside a techno club. Bass through the walls, sirens on the street, and nobody can hear a word. The regulars order by dancing.</p>
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div style="flex:1;min-width:240px"><h1>Berlin Bears</h1>
+    <p class="tag">A döner window outside a techno club. Bass through the walls, sirens on the street, and nobody can hear a word. The regulars order by dancing.</p></div>
+    <div class="siteqr"><canvas id="siteQr" width="120" height="120"></canvas><span id="siteUrl" class="small"></span></div>
+  </div>
   <div class="roles">
     <div class="role"><h3 style="color:#7fe0d4">Bärbel · Cashier</h3><ul><li class="yes">Sees every regular dance at the window</li><li class="yes">Copies the dance with her body (camera) or keys 1–6</li><li class="no">New here: doesn't know anyone's order</li><li class="no">Can't cook</li></ul></div>
     <div class="role"><h3 style="color:#e3a36a">Bruno · Chef</h3><ul><li class="yes">The owner. His book says which dance means which order</li><li class="yes">Cooks everything and passes it through the hatch</li><li class="no">Can't see the customers</li><li class="no">Only sees Bärbel dancing in the hatch</li></ul></div>
@@ -63,6 +68,7 @@ input{font:800 18px Archivo,sans-serif;padding:10px 12px;border-radius:12px;bord
   <div class="row"><button id="hostCashier" class="alt">Start a kitchen as Bärbel</button><button id="hostChef" class="alt">Start as Bruno</button><input id="codeIn" maxlength="6" placeholder="CODE" aria-label="Kitchen code"><button id="joinBtn" class="alt">Join</button></div>
   <p class="small" id="netNote"></p>
   <p class="small">Bärbel: keys 1–6 strike a pose, 0 rests, C turns the camera on. Bruno: mouse or touch to cook, hold on the spit and the board.</p>
+  <p class="small">Other versions: <a href="./technodoner" style="color:#ffb238">TechnoDöner (this game + TechnoDoner's rule book)</a> · <a href="./original/" style="color:#ffb238">TechnoDoner (the original, 1:1)</a></p>
 </div></div>
 <div class="ov" id="wait" hidden><div class="card">
   <h2>Kitchen code</h2><div class="code" id="waitCode">----</div>

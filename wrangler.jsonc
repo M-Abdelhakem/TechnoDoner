@@ -8,7 +8,7 @@
   "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
-  "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
-  "durable_objects": { "bindings": [ { "name": "ROOMS", "class_name": "Room" }, { "name": "LOBBY", "class_name": "Lobby" } ] },
-  "migrations": [ { "tag": "v1", "new_sqlite_classes": ["Room", "Lobby"] } ]
+  "assets": { "directory": "./dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/", "/index.html", "/technodoner*", "/original/*", "/api/*"] },
+  "durable_objects": { "bindings": [ { "name": "ROOMS", "class_name": "Room" }, { "name": "LOBBY", "class_name": "Lobby" }, { "name": "ORIGINAL", "class_name": "OriginalGame" } ] },
+  "migrations": [ { "tag": "v1", "new_sqlite_classes": ["Room", "Lobby"] }, { "tag": "v2", "new_sqlite_classes": ["OriginalGame"] } ]
 }

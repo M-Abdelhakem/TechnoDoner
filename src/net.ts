@@ -13,7 +13,7 @@ export function loopPair() {
 
 const apiURL = (path: string, ws = false) => { const u = new URL('api/' + path, location.href); if (ws) u.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'; return u; };
 
-export function wsEndpoint(code: string, role: string | null) {
+export function wsEndpoint(code: string, role: string | null, ver = 1) {
   const url = apiURL('room/' + code, true);
   let ws: WebSocket, closed = false, status = 'connecting', retry = 0, dirty = false;
   const state: any = {}, others = new Map();
@@ -33,7 +33,7 @@ export function wsEndpoint(code: string, role: string | null) {
   const iv = setInterval(() => { if (dirty && ws.readyState === 1) { ws.send(JSON.stringify({ t: 's', d: state })); dirty = false; } }, 50);
   return {
     set(p) { for (const k in p) { if (p[k] === null) delete state[k]; else state[k] = p[k]; } dirty = true; },
-    partner() { for (const d of others.values()) if (d && d.bb === 1 && d.role && d.role !== role) return d; return null; },
+    partner() { for (const d of others.values()) if (d && d.bb === ver && d.role && d.role !== role) return d; return null; },
     peers: () => [...others.values()].filter(Boolean),
     setRole(r) { role = r; },
     close() { closed = true; clearInterval(iv); try { ws.close(); } catch {} },
@@ -42,8 +42,8 @@ export function wsEndpoint(code: string, role: string | null) {
 }
 
 /** Quick play: the first press waits with its own code, the next one gets {join: code} */
-export async function quickMatch(code: string, cancel = false) {
-  try { const r = await fetch(apiURL('quick'), { method: 'POST', body: JSON.stringify({ code, cancel }) }); return await r.json(); }
+export async function quickMatch(code: string, cancel = false, lobby = 'main') {
+  try { const u = apiURL('quick'); u.searchParams.set('lobby', lobby); const r = await fetch(u, { method: 'POST', body: JSON.stringify({ code, cancel, lobby }) }); return await r.json(); }
   catch { return { error: true }; }
 }
 export const newCode = () => Array.from({ length: 4 }, () => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 31)]).join('');

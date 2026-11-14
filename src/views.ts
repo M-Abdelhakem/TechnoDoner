@@ -14,7 +14,7 @@ import { startCamera } from './camera';
 export const VW = 960, VH = 540;
 const LOW_W = 480, LOW_H = 270, LOWK = LOW_W / VW;
 
-class View {
+export class View {
   constructor(stage) {
     this.headless = stage.id === 'botstage';
     Object.assign(this, { mx: -99, my: -99, hits: [], hover: null, holdId: null, pops: [], sawSign: 0, pSign: null, pSignT: 0, mySign: null, mySignT: 0, signId: 0, picks: [], pickMap: {}, lit: null });

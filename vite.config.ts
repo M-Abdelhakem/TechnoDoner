@@ -4,5 +4,7 @@ import { defineConfig } from 'vite';
 // In dev, /api (the co-op relay) goes to `npm run worker:dev` on 8791.
 export default defineConfig({
   base: './',
+  // three pages: Berlin Bears (index), TechnoDöner (technodoner); public/original/ is the 1:1 TechnoDoner port, copied as is
+  build: { rollupOptions: { input: { main: 'index.html', technodoner: 'technodoner.html' } } },
   server: { proxy: { '/api': { target: 'http://localhost:8791', ws: true } } },
 });

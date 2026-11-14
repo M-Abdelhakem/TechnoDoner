@@ -108,13 +108,13 @@ export function makeBear(kind) {
   return g;
 }
 
-export function makeCustomer(seed) {
+export function makeCustomer(seed, opts: any = {}) {
   const sp = SPECIES[seed % 5]; const col = { fox: 0xe07b2a, raccoon: 0x8f8f9a, boar: 0x7a5236, rabbit: 0xece2d6, pigeon: 0x8796b0 }[sp];
   const g = new THREE.Group(), mats = []; const L = (c) => { const m = lam(c); mats.push(m); return m; };
   const torso = new THREE.Group(); g.add(torso);
   const add = (geo, c, x, y, z, par = torso) => { const m = M(geo, L(c), x, y, z); par.add(m); return m; };
   const shirt = [0x3b2a7a, 0x1d6f6a, 0x7a1d4f, 0x2a2a2a, 0x5a3a1a][(seed >> 3) % 5];
-  const sh = add(GEO.sph(0.4, 8), shirt, 0, -0.55, 0); sh.scale.set(1.3, 0.85, 0.8);
+  const sh = add(GEO.sph(0.4, 8), opts.shirt ?? shirt, 0, -0.55, 0); sh.scale.set(1.3, 0.85, 0.8);
   const head = new THREE.Group(); torso.add(head); const hadd = (geo, c, x, y, z) => add(geo, c, x, y, z, head);
   hadd(GEO.sph(0.3, 9), col, 0, 0, 0);
   if (sp === 'rabbit') [-1, 1].forEach((s) => { const e = hadd(GEO.sph(0.11, 6), col, s * 0.11, 0.4, 0); e.scale.set(0.6, 1.9, 0.6); });
@@ -125,12 +125,12 @@ export function makeCustomer(seed) {
   if (sp === 'pigeon') { const b = hadd(GEO.cone(0.05, 0.14, 5), 0xf2b33a, 0, -0.04, 0.34); b.rotation.x = Math.PI / 2; const nk = add(new THREE.TorusGeometry(0.2, 0.04, 4, 10), 0x4fbf9a, 0, -0.27, 0); nk.rotation.x = Math.PI / 2; }
   if (sp === 'rabbit') hadd(GEO.sph(0.035, 5), 0xf08aa0, 0, -0.04, 0.29);
   [-1, 1].forEach((s) => hadd(GEO.sph(0.04, 5), sp === 'raccoon' ? 0xffffff : 0x141018, s * 0.11, 0.06, 0.27));
-  const acc = (seed >> 2) % 4;
+  const acc = opts.noAcc ? 0 : (seed >> 2) % 4;
   if (acc === 1) hadd(GEO.box(0.42, 0.08, 0.04), 0x111111, 0, 0.07, 0.29);
   if (acc === 2) hadd(new THREE.SphereGeometry(0.315, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2), 0xff4fa8, 0, 0.05, 0);
   if (acc === 3) hadd(GEO.sph(0.03, 4), 0xffd23f, 0.3, -0.06, 0);
   const Lr = arm(torso, L, col, -0.45, -0.32, 0.05, 0.28, 0.26, 0.065, 0.095), Rr = arm(torso, L, col, 0.45, -0.32, 0.05, 0.28, 0.26, 0.065, 0.095);
-  g.userData = { mats, rig: { L: Lr, R: Rr, head, torso, cur: rest() } };
+  g.userData = { mats, shirtMat: sh.material, rig: { L: Lr, R: Rr, head, torso, cur: rest() } };
   applyPose(g.userData.rig, POSES.I.v);
   return g;
 }
