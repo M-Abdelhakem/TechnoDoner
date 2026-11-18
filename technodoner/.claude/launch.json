@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"worker","runtimeExecutable":"npx","runtimeArgs":["wrangler","dev","--port","8791"],"port":8791}]}
