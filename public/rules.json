@@ -1,9 +1,9 @@
 {
   "settings": { "roundSeconds": 240, "patienceSeconds": 100 },
-  "manualTitle": "DÖNER BEARS Handbook",
-  "manualIntro": "Every döner starts with the BASE. Then look at the customer and apply EVERY rule that matches.",
+  "manualTitle": "TechnoShawrma Handbook",
+  "manualIntro": "Every shawrma starts with the BASE. Then look at the customer and apply EVERY rule that matches.",
   "orders": [
-    { "name": "Döner", "says": "", "ingredients": ["bread", "meat", "lettuce", "tomato"] }
+    { "name": "Shawrma", "says": "", "ingredients": ["bread", "meat", "lettuce", "tomato"] }
   ],
   "rules": [
     { "when": { "trait": "sunglasses", "equals": true }, "effect": { "add": ["meat"] }, "text": "🕶️ Sunglasses → +1 Meat" },

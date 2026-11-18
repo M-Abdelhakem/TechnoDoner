@@ -1,5 +1,5 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Döner Bears · Cashier</title><link rel="stylesheet" href="/style.css">
+<html><head><meta charset="utf-8"><title>TechnoShawrma · Cashier</title><link rel="stylesheet" href="/style.css">
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
 <style>
   #pad { bottom: 12px; left: 50%; transform: translateX(-50%); background: #000c; padding: 10px 12px; border-radius: 16px; border: 1px solid #ff00aa66; width: min(640px, 96vw); }
@@ -51,8 +51,8 @@
 <template id="stepsTpl">
   <ol class="steps">
     <li>👀 <b>Look at the customer</b>: sunglasses? glitter? bucket hat? red wristband? swaying? neon outfit?</li>
-    <li>📖 <b>Open the rule book</b> (TAB). Start with the BASE döner, then apply every rule that matches.</li>
-    <li>🧠 <b>Memorize the döner</b>, then <b>turn around</b> (SPACE). You can't see the customer or the book while you're turned around!</li>
+    <li>📖 <b>Open the rule book</b> (TAB). Start with the BASE shawrma, then apply every rule that matches.</li>
+    <li>🧠 <b>Memorize the shawrma</b>, then <b>turn around</b> (SPACE). You can't see the customer or the book while you're turned around!</li>
     <li>🐾 <b>Sign each ingredient</b> through the kitchen window. <b>One tap = one portion</b> (2 onions = tap Onion twice). Only sign while the chef is looking at you!</li>
     <li>🛎️ Finish with <b>Serve!</b> If you signed something wrong, use <b>Start over</b> and sign it all again.</li>
   </ol>
@@ -197,7 +197,7 @@ async function loadManual() {
   $('manual').innerHTML = `
     <h2>📖 ${esc(r.manualTitle || 'Rule book')}</h2>
     <p class="intro">${esc(r.manualIntro || '')}</p>
-    <h3>BASE döner</h3>
+    <h3>BASE shawrma</h3>
     <div class="base">${r.orders[0].ingredients.map(ingLabel).join(' + ')}</div>
     <h3>RULES (apply every one that matches)</h3>
     ${r.rules.map((x) => `<div class="rule">${esc(x.text)}</div>`).join('')}

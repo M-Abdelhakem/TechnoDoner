@@ -1,9 +1,9 @@
-# TechnoDoner 🐻🥙
+# TechnoShawrma 🐻🥙
 
-Two bears run a döner stand inside a Berlin techno club. The music is too loud to talk, so they can only use their paws.
+Two bears run a shawrma stand inside a Berlin techno club. The music is too loud to talk, so they can only use their paws.
 
 - **Cashier Bear** sees the customer and has the rule book. They have to turn around to sign the order to the chef through the kitchen window.
-- **Chef Bear** has the ingredients. They have to turn around to read the gestures, then build the döner.
+- **Chef Bear** has the ingredients. They have to turn around to read the gestures, then build the shawrma.
 
 A 2-player communication game, built at a Berlin hackathon.
 

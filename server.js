@@ -11,7 +11,7 @@ const INGREDIENTS = ['bread', 'meat', 'lettuce', 'tomato', 'onion'];
 // ---------- rules ----------
 const FALLBACK_RULES = {
   settings: { roundSeconds: 240, patienceSeconds: 100 },
-  manualTitle: 'Döner Manual',
+  manualTitle: 'TechnoShawrma Manual',
   manualIntro: 'Rules missing. Make it with everything.',
   orders: [{ name: 'The Classic', says: 'ONE WITH EVERYTHING!', ingredients: ['bread', 'meat', 'lettuce', 'tomato', 'onion'] }],
   rules: [],
@@ -172,7 +172,7 @@ function handleAction(a) {
     case 'serve':
       if (state.phase === 'playing' && state.customer) {
         const ok = sameMultiset(state.plate, state.customer.expected);
-        finishCustomer(ok, ok ? 'Perfect!' : 'Wrong döner');
+        finishCustomer(ok, ok ? 'Perfect!' : 'Wrong shawrma');
       }
       break;
   }
@@ -217,7 +217,7 @@ http.createServer((req, res) => {
   });
 }).listen(PORT, () => {
   const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
-  console.log(`\n🐻🥙 Döner Bears running`);
+  console.log(`\n🐻🥙 TechnoShawrma running`);
   console.log(`   Cashier: http://localhost:${PORT}/cashier`);
   console.log(`   Chef:    http://localhost:${PORT}/chef`);
   for (const ip of ips) console.log(`   Other laptop: http://${ip}:${PORT}/chef  (or /cashier)`);
