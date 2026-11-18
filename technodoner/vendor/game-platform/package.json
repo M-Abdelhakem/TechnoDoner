@@ -1,0 +1,10 @@
+{
+  "name": "@jommi/game-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "One small interface between a browser game and the site that hosts it: jommi.fi / own Worker, Wavedash, or Remix.",
+  "exports": { ".": "./src/index.ts" },
+  "types": "./src/index.ts",
+  "files": ["src"]
+}

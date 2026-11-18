@@ -19,3 +19,7 @@ npm start
 - Chef: http://localhost:3000/chef (from another laptop on the same Wi-Fi, use the IP printed in the terminal)
 
 Rules live in `public/rules.json` and reload every round.
+
+## TechnoDöner: the camera version
+
+[`technodoner/`](technodoner/) holds TechnoDöner, a version of this game made at the same hackathon. Every regular orders by dancing. The cashier copies each dance with her body on camera, and the chef looks it up in his book of regulars. It uses Three.js and Cloudflare Workers. Play it at https://berlin-bears.joakim-isoaho.workers.dev, or see [`technodoner/README.md`](technodoner/README.md) to run it locally.

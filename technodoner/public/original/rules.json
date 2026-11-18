@@ -1,0 +1,30 @@
+{
+  "settings": { "roundSeconds": 180 },
+  "bookTitle": "STAMMKUNDEN",
+  "bookIntro": "The regulars always order the same. Read the cashier's dance in the window, find it here, cook their usual.",
+  "orders": {
+    "klassik": { "name": "Klassik", "items": ["bread", "meat", "lettuce", "tomato", "onion"] },
+    "fleisch": { "name": "Nur Fleisch", "items": ["bread", "meat", "meat"] },
+    "scharf": { "name": "Scharf", "items": ["bread", "meat", "onion", "onion"] },
+    "ohnez": { "name": "Ohne Zwiebel", "items": ["bread", "meat", "lettuce", "tomato"] },
+    "gemuese": { "name": "Gemüse", "items": ["bread", "lettuce", "tomato", "onion"] },
+    "alles": { "name": "Mit Alles", "items": ["bread", "meat", "meat", "lettuce", "tomato", "onion"] }
+  },
+  "_regulars": "dance: 3 poses (Chill uses the first 2), d4: 4 poses (Rave). U arms up, L point left, R point right, C flex (arms out, forearms up), H hands on head, N lean. look: fur, shirt and hat/extra for the 3D bear and the book's face",
+  "regulars": [
+    { "name": "Kalle", "dance": "UCU", "d4": "UCUH", "order": "klassik", "look": { "fur": "#8b5a2b", "shirt": "#151515", "hat": "beanie", "hatColor": "#e63946", "extra": "sunglasses", "emoji": "🧢" } },
+    { "name": "Mia", "dance": "LRC", "d4": "LRCU", "order": "scharf", "look": { "fur": "#d9d2c5", "shirt": "#ff4fa8", "hat": "bucket", "hatColor": "#e0c341", "extra": "glitter", "emoji": "👒" } },
+    { "name": "Dörte", "dance": "HUH", "d4": "HUHC", "order": "gemuese", "look": { "fur": "#c49a6c", "shirt": "#7c4dff", "hat": "bow", "hatColor": "#ff1744", "extra": "pearls", "emoji": "🎀" } },
+    { "name": "Tarek", "dance": "RLU", "d4": "RLUN", "order": "alles", "look": { "fur": "#3b2a1f", "shirt": "#f2f2f2", "hat": "cap", "hatColor": "#00e5ff", "extra": "chain", "emoji": "📿" } },
+    { "name": "Uschi", "dance": "CHN", "d4": "CHNU", "order": "fleisch", "look": { "fur": "#a0a0a8", "shirt": "#39ff14", "hat": "headphones", "hatColor": "#ff4fa8", "extra": "", "emoji": "🎧" } },
+    { "name": "Jens", "dance": "NUN", "d4": "NUNC", "order": "ohnez", "look": { "fur": "#5c3b1e", "shirt": "#1d6f6a", "hat": "mohawk", "hatColor": "#ff00aa", "extra": "earring", "emoji": "🦔" } },
+    { "name": "Svetlana", "dance": "LCH", "d4": "LCHU", "order": "klassik", "look": { "fur": "#efe6d2", "shirt": "#111111", "hat": "furhat", "hatColor": "#f5f5f5", "extra": "sunglasses", "emoji": "🕶️" } },
+    { "name": "Ömer", "dance": "ULR", "d4": "ULRC", "order": "scharf", "look": { "fur": "#7a5236", "shirt": "#ff8f00", "hat": "flatcap", "hatColor": "#6d6d6d", "extra": "moustache", "emoji": "🥸" } }
+  ],
+  "_levels": "patienceSeconds per regular; danceLen = poses in each routine; beatsPerPose = beats each pose is held (then one rest beat); strobeRate multiplies how often strobes come; bpm is the music. Same numbers as TechnoDöner · Regulars (src/levels.ts)",
+  "levels": {
+    "chill": { "label": "Chill", "emoji": "😌", "blurb": "120 s per regular, 2-move dances, fewer strobes.", "patienceSeconds": 120, "danceLen": 2, "beatsPerPose": 2, "strobeRate": 0.5, "bpm": 112 },
+    "normal": { "label": "Normal", "emoji": "🙂", "blurb": "95 s per regular, 3-move dances.", "patienceSeconds": 95, "danceLen": 3, "beatsPerPose": 2, "strobeRate": 1, "bpm": 122 },
+    "rave": { "label": "Rave", "emoji": "🔥", "blurb": "75 s, 4-move dances on every beat, strobes twice as often.", "patienceSeconds": 75, "danceLen": 4, "beatsPerPose": 1, "strobeRate": 2, "bpm": 132 }
+  }
+}

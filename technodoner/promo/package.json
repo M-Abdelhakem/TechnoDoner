@@ -1,0 +1,10 @@
+{
+  "name": "technodoner-promo",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic TikTok promo renderer for TechnoDöner (headless Chrome + ffmpeg). Uses the parent project's three and vite.",
+  "scripts": {
+    "render": "node render.mjs",
+    "stills": "node render.mjs --stills"
+  }
+}

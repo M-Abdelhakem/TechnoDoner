@@ -1,0 +1,11 @@
+{
+  "slug": "berlin-bears",
+  "title": "TechnoDöner",
+  "summary": "Two bears run a döner window outside a techno club, too loud to talk. The cashier copies each regular's dance with their body on camera; the chef reads it from his book and cooks.",
+  "stage": "experiment",
+  "build": "npm run build",
+  "dist": "dist",
+  "targets": {
+    "web": { "worker": "berlin-bears" }
+  }
+}

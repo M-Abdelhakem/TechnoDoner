@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>TechnoDöner · Original</title><link rel="stylesheet" href="./style.css">
+<style>
+  .roles { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .roles a { display: block; width: 280px; padding: 24px; border-radius: 18px; background: #1a0d24; border: 2px solid #ff00aa; color: #fff; text-decoration: none; box-shadow: 0 0 20px #ff00aa55; }
+  .roles a:hover { background: #2a1236; }
+  .roles .e { font-size: 64px; }
+  .roles h3 { margin: 8px 0; font-size: 26px; color: #00e5ff; }
+  /* port: QR of this page + credit, kept in the corners */
+  #qr { position: fixed; right: 12px; bottom: 12px; z-index: 30; background: #fff; padding: 4px; border-radius: 8px; line-height: 0; }
+  #qr svg { width: 96px; height: 96px; display: block; }
+  #credit { position: fixed; left: 12px; bottom: 10px; z-index: 30; font-size: 11px; color: #888; }
+</style></head>
+<body>
+<div class="overlay">
+  <h1>🐻 TECHNODÖNER 🥙</h1>
+  <h2>Original</h2>
+  <p>A döner stand inside a Berlin techno club. The bass is too loud to talk. The regulars dance their order, and you only have your paws.</p>
+  <div class="roles">
+    <a href="./cashier.html"><div class="e">🧾</div><h3>Bärbel · Cashier</h3>You see the regulars. Copy their dance with your body (camera) or keys, then raise your hand to serve the döner.</a>
+    <a href="./chef.html"><div class="e">🔪</div><h3>Bruno · Chef</h3>You have the book of regulars and the ingredients. Read Bärbel's dance in your window, cook their usual and pass it.</a>
+  </div>
+  <p style="font-size:13px;color:#999">Each player opens their role on their own screen. Don't look at each other's screens!</p>
+</div>
+<div id="qr" title="Scan to open this page on a phone"></div>
+<div id="credit">TechnoDoner by m-abdelhakem (MIT), ported 1:1</div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+  // port: carry ?room=XYZ over to the role pages, and show a QR of this page's address
+  var room = new URLSearchParams(location.search).get('room');
+  if (room) document.querySelectorAll('.roles a').forEach(function (a) { a.href = a.getAttribute('href') + '?room=' + encodeURIComponent(room); });
+  if (window.qrcode) { var q = qrcode(0, 'M'); q.addData(location.href); q.make(); document.getElementById('qr').innerHTML = q.createSvgTag(3, 0); }
+</script>
+</body></html>

@@ -1,0 +1,92 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Berlin Bears Trailer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Bungee&display=swap">
+<style>
+  /* Layout: a cinema screen — 16:9 player centered on club-black, controls rail underneath, chapter chips as the scene list.
+     Single committed look: bunker night, döner-lightbox amber, club magenta. */
+  :root {
+    --night: #08050d; --panel: #160f20; --line: #2e2340; --text: #f4ecf8; --muted: #b3a3c4;
+    --amber: #ffb21e; --magenta: #ff3fa4; --red: #e2332e; --teal: #16b3a3; --paper: #fff6e3;
+    --display: 'Bungee', 'Arial Black', Impact, sans-serif;
+    --body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { min-height: 100%; }
+  body { margin: 0; background: radial-gradient(ellipse at 50% 0%, #2a1338 0%, var(--night) 60%); background-color: var(--night); color: var(--text); font-family: var(--body); font-size: 15px; }
+  button, a.btn { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  #trailer { min-height: 100%; display: grid; place-items: center; padding-block: 20px;
+             padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+  .tv { width: min(100%, 1100px, calc((100vh - 190px) * 16 / 9)); min-width: 0; display: grid; gap: 12px; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .head h1 { font-family: var(--display); font-weight: 400; font-size: clamp(22px, 4vw, 32px); margin: 0; color: var(--amber); letter-spacing: .02em; text-shadow: 0 0 24px rgba(255,178,30,.35); }
+  .head p { margin: 0; color: var(--muted); font-size: 14px; }
+  .screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: #000; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 2px var(--line), 0 30px 90px rgba(255,63,164,.18); }
+  #gl, #tv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #gl { image-rendering: pixelated; }
+  #tv { cursor: pointer; touch-action: manipulation; }
+  .screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px); }
+  .bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 140px; }
+  #tv-scrub { width: 100%; accent-color: var(--magenta); }
+  #tv-time { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); min-width: 84px; text-align: right; }
+  .btn { border: 2px solid var(--line); background: var(--panel); border-radius: 10px; padding: 8px 14px; font-weight: 800; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .btn.primary { background: var(--magenta); border-color: var(--magenta); color: #fff; }
+  .btn.amber { background: var(--amber); border-color: var(--amber); color: #1b1424; }
+  #tv-play { min-width: 84px; justify-content: center; }
+  .chapters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chapters button { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .chapters button.on { color: #fff; border-color: var(--magenta); background: rgba(255,63,164,.22); }
+  .pad { position: absolute; right: 3%; bottom: 16%; display: grid; grid-template-columns: repeat(3, clamp(40px, 6vw, 58px)); grid-template-rows: repeat(2, clamp(40px, 6vw, 58px)); gap: 6px; }
+  .pad button { border-radius: 12px; border: 2px solid rgba(255,255,255,.8); background: rgba(255,63,164,.9); font-size: clamp(18px, 3vw, 24px); font-weight: 800; color: #fff; touch-action: manipulation; }
+  .pad [data-d="U"] { grid-column: 2; } .pad [data-d="L"] { grid-column: 1; grid-row: 2; } .pad [data-d="D"] { grid-column: 2; grid-row: 2; } .pad [data-d="R"] { grid-column: 3; grid-row: 2; }
+  .cta { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 92%; }
+  .roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .role { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+  .role b { font-family: var(--display); font-weight: 400; font-size: 15px; letter-spacing: .02em; }
+  .role span { color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+  .role.k b { color: #ff6b5f; } .role.g b { color: #3ee0cf; } .role.n b { color: var(--amber); }
+  @media (max-width: 560px) { .head p { display: none; } #tv-time { min-width: 0; } }
+</style>
+
+<section id="trailer">
+  <div class="tv">
+    <div class="head">
+      <h1>BERLIN BEARS</h1>
+      <p>Interactive trailer · you’ll be asked to copy a dance</p>
+    </div>
+    <div class="screen">
+      <canvas id="gl" width="480" height="270" aria-hidden="true"></canvas>
+      <canvas id="tv" width="960" height="540" aria-label="Berlin Bears trailer. Click to play or pause."></canvas>
+      <div class="pad" id="tv-pad" hidden aria-label="Dance pad">
+        <button type="button" data-d="U" aria-label="Up">↑</button><button type="button" data-d="L" aria-label="Left">←</button><button type="button" data-d="D" aria-label="Down">↓</button><button type="button" data-d="R" aria-label="Right">→</button>
+      </div>
+      <div class="cta" id="tv-cta" hidden>
+        <a class="btn primary" id="tv-game" href="#" target="_blank" rel="noopener">Play the demo</a>
+        <button class="btn amber" type="button" id="tv-replay">Watch again</button>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn primary" id="tv-play" type="button">Play</button>
+      <div class="grow"><input id="tv-scrub" type="range" min="0" max="1000" value="0" aria-label="Trailer position"></div>
+      <span id="tv-time">0:00 / 0:56</span>
+      <button class="btn b-mute" type="button">Sound on</button>
+    </div>
+    <div class="chapters" id="tv-chapters" aria-label="Chapters"></div>
+    <div class="roles">
+      <div class="role k"><b>BRUNO · KASSE</b><span>Sees the customers. Reads their dance to take the order. Can’t touch meat or veg.</span></div>
+      <div class="role g"><b>BÄRBEL · GRILL</b><span>Shaves, chops and builds the döner. Back to the window, she never sees an order.</span></div>
+      <div class="role n"><b>NO TALKING</b><span>Too loud for words. Eight paw signs carry every order through the hatch.</span></div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/bbkit.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/trailer.js"></script>
