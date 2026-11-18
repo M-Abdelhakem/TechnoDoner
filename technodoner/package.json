@@ -9,11 +9,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test test/*.test.ts",
-    "publish:all": "node ../tools/publish.mjs ."
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@jommi/game-platform": "file:../tools/platform",
+    "@jommi/game-platform": "file:./vendor/game-platform",
     "@mediapipe/tasks-vision": "^0.10.14",
     "qrcode": "^1.5.4",
     "three": "^0.170.0"
